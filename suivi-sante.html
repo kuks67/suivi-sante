@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Suivi Santé</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --pink:#D4537E;--pink-l:#FBEAF0;--pink-d:#993556;
+  --blue:#378ADD;--blue-l:#E6F1FB;--blue-d:#185FA5;
+  --green:#1D9E75;--green-l:#E1F5EE;--green-d:#0F6E56;
+  --amber:#BA7517;--amber-l:#FAEEDA;--amber-d:#854F0B;
+  --purple:#7F77DD;--purple-l:#EEEDFE;--purple-d:#3C3489;
+  --coral:#D85A30;--coral-l:#FAECE7;--coral-d:#993C1D;
+  --teal:#1D9E75;--teal-l:#E1F5EE;
+  --bg:#fff;--bg2:#f8f7f4;--bg3:#f1efe8;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --border:rgba(0,0,0,0.11);--border2:rgba(0,0,0,0.19);
+  --r:10px;--rl:14px;--shadow:0 1px 4px rgba(0,0,0,0.06);
+}
+[data-theme="dark"]{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --text:#f0ede8;--text2:#b4b2a9;--text3:#888780;
+  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.17);
+  --pink-l:#3d1a28;--blue-l:#0e2540;--green-l:#0a2a1f;
+  --amber-l:#2a1c05;--purple-l:#1e1b40;--coral-l:#2d160a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sb{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:1.25rem .875rem;display:flex;flex-direction:column;gap:3px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-title{font-size:15px;font-weight:600;margin-bottom:1.25rem;padding:0 4px;display:flex;align-items:center;gap:6px}
+.prof-sw{display:flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:1.125rem}
+.pb{flex:1;padding:6px 0;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .15s}
+.pb.af{background:var(--pink-l);color:var(--pink-d)}
+.pb.am{background:var(--blue-l);color:var(--blue-d)}
+.nav{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav:hover{background:var(--bg3);color:var(--text)}
+.nav.active{background:var(--bg3);color:var(--text);font-weight:500}
+.nav .ic{font-size:15px;width:20px;text-align:center}
+.sep{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:10px 9px 3px}
+.sb-foot{margin-top:auto;padding-top:.875rem;display:flex;flex-direction:column;gap:5px}
+.sb-btn{font-size:12px;padding:5px 9px;border-radius:var(--r);border:1px solid var(--border2);background:none;color:var(--text2);cursor:pointer;text-align:left;transition:all .15s}
+.sb-btn:hover{background:var(--bg3)}
+/* MAIN */
+.main{flex:1;padding:1.75rem 2rem;max-width:960px}
+.pt{font-size:21px;font-weight:600;margin-bottom:1.375rem;display:flex;align-items:center;gap:9px}
+/* SECTIONS */
+.sec{display:none}.sec.active{display:block}
+/* CARDS */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.125rem 1.375rem;margin-bottom:.875rem;box-shadow:var(--shadow)}
+.ct{font-size:13px;font-weight:600;margin-bottom:.875rem;color:var(--text)}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin-bottom:.875rem}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:.875rem}
+.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:.875rem}
+/* METRICS */
+.mc{background:var(--bg2);border-radius:var(--r);padding:.875rem;text-align:center}
+.ml{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.mv{font-size:22px;font-weight:600;line-height:1}
+.ms{font-size:11px;color:var(--text3);margin-top:3px}
+.md{font-size:12px;font-weight:500;margin-top:2px}
+/* FORMS */
+.fr{display:flex;gap:11px;flex-wrap:wrap;margin-bottom:3px}
+.fg{flex:1;min-width:120px;margin-bottom:10px}
+.fg.full{flex:100%}
+label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
+  width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;
+  transition:border .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(127,119,221,.14)}
+textarea{resize:vertical;min-height:60px}
+.btn{padding:7px 16px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--bg3)}
+.btnp{background:var(--purple);border-color:var(--purple);color:#fff}
+.btnp:hover{background:var(--purple-d);border-color:var(--purple-d)}
+.btn-sm{padding:4px 11px;font-size:12px}
+/* IMC */
+.imc-big{font-size:40px;font-weight:700;line-height:1}
+.imc-bar{height:13px;border-radius:7px;background:linear-gradient(to right,#53c0f0 0%,#4fbe6c 25%,#f5c84c 55%,#f08c4b 75%,#e45f5f 100%);position:relative;margin:8px 0 3px}
+.imc-ndl{position:absolute;top:-5px;width:4px;height:23px;background:var(--text);border-radius:2px;transform:translateX(-50%);transition:left .5s cubic-bezier(.34,1.56,.64,1)}
+.imc-sc{display:flex;justify-content:space-between;font-size:10px;color:var(--text3)}
+/* BANNERS */
+.banner{border-radius:var(--rl);padding:.875rem 1.125rem;margin-bottom:.875rem;display:flex;align-items:center;gap:11px}
+.banner.good{background:var(--green-l);border:1px solid rgba(29,158,117,.2)}
+.banner.warn{background:var(--amber-l);border:1px solid rgba(186,117,23,.2)}
+.banner.info{background:var(--blue-l);border:1px solid rgba(55,138,221,.2)}
+.banner.tip{background:var(--purple-l);border:1px solid rgba(127,119,221,.2)}
+.ban-ic{font-size:26px}
+.ban-t{flex:1}.ban-h{font-size:13px;font-weight:600}.ban-s{font-size:12px;color:var(--text2);margin-top:1px}
+/* PROG */
+.pb-wrap{height:9px;border-radius:5px;background:var(--bg3);overflow:hidden;margin:5px 0}
+.pb-fill{height:100%;border-radius:5px;transition:width .5s}
+/* HYDRO */
+.wbtn{padding:7px 11px;border-radius:var(--r);border:1px solid var(--border2);background:var(--blue-l);color:var(--blue-d);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.wbtn:hover{background:var(--blue);color:#fff}
+.wbtn.neg{background:var(--coral-l);color:var(--coral-d)}
+.wbtn.neg:hover{background:var(--coral);color:#fff}
+.wgrid{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0}
+/* DROPS */
+.hdrops{display:flex;gap:3px;flex-wrap:wrap;margin:9px 0}
+.hdrop{width:30px;height:30px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:var(--bg3);border:2px solid var(--border2);transition:all .25s;font-size:14px;display:flex;align-items:center;justify-content:center}
+.hdrop.on{background:var(--blue);border-color:var(--blue-d)}
+.hdrop.neg{background:var(--coral-l);border-color:var(--coral)}
+/* RATINGS */
+.rrow{display:flex;gap:7px;margin:5px 0 11px}
+.rb{width:34px;height:34px;border-radius:50%;border:2px solid var(--border2);background:var(--bg2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.rb.active{border-color:var(--purple);background:var(--purple-l);transform:scale(1.1)}
+/* STARS */
+.stars{display:flex;gap:3px;cursor:pointer;margin:5px 0 11px}
+.star{font-size:22px;transition:transform .1s}.star:hover{transform:scale(1.2)}
+/* LOG */
+.ll{display:flex;flex-direction:column;gap:1px}
+.le{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--r);background:var(--bg2);font-size:13px}
+.le:hover{background:var(--bg3)}
+.ld{color:var(--text3);font-size:11px;min-width:50px}
+.lbadge{padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.b-cardio{background:var(--green-l);color:var(--green-d)}
+.b-muscu{background:var(--blue-l);color:var(--blue-d)}
+.b-rando{background:var(--amber-l);color:var(--amber-d)}
+.b-course{background:var(--coral-l);color:var(--coral-d)}
+.lm{flex:1;font-weight:500}
+.lme{color:var(--text2);font-size:12px}
+.ldel{color:var(--text3);cursor:pointer;font-size:14px;padding:2px 5px;border-radius:4px;border:none;background:none;opacity:0;transition:opacity .15s}
+.le:hover .ldel{opacity:1}
+/* CHARTS */
+.cw{position:relative;width:100%}
+.cw.h180{height:180px}.cw.h220{height:220px}.cw.h260{height:260px}.cw.h300{height:300px}
+.empty{display:flex;align-items:center;justify-content:center;height:100px;color:var(--text3);font-size:13px;border:2px dashed var(--border);border-radius:var(--r)}
+/* ENCOURAGE */
+.enc{border-left:3px solid var(--purple);padding:9px 13px;background:var(--purple-l);border-radius:0 var(--r) var(--r) 0;font-size:13px;color:var(--purple-d);margin-bottom:.875rem}
+/* STREAK */
+.streak{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;background:var(--amber-l);color:var(--amber-d);font-size:13px;font-weight:600;border:1px solid rgba(186,117,23,.2);margin-bottom:.875rem}
+/* MEAL BTNS */
+.mbtns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.mbtn{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:var(--bg2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.mbtn.active{background:var(--amber-l);border-color:var(--amber);color:var(--amber-d)}
+/* SPORT TYPE */
+.stbtns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.stbtn{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:var(--bg2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.stbtn.active{background:var(--green-l);border-color:var(--green);color:var(--green-d)}
+/* DIFF BTNS */
+.dbtns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.dbtn{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:var(--bg2);font-size:12px;cursor:pointer;transition:all .15s}
+.dbtn.active{background:var(--coral-l);border-color:var(--coral);color:var(--coral-d)}
+/* SKIN TIP */
+.skin-tip{background:var(--pink-l);border:1px solid rgba(212,83,126,.2);border-radius:var(--rl);padding:.875rem 1.125rem;margin-bottom:.875rem}
+/* PROFILE PAGE */
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+@media(max-width:600px){.prof-grid{grid-template-columns:1fr}}
+/* RTH badge */
+.rth-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-top:4px}
+/* THEME BTN */
+.tbtn{font-size:16px;background:none;border:none;cursor:pointer;padding:4px 7px;color:var(--text2)}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+/* TOOLTIP */
+.tip-lbl{font-size:11px;color:var(--text3);margin-left:4px}
+/* HYDRO EQUIV TABLE */
+.heq{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.heq th{text-align:left;padding:5px 8px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border)}
+.heq td{padding:5px 8px;border-bottom:1px solid var(--border)}
+.heq tr:last-child td{border-bottom:none}
+.heq .coef{font-weight:600}
+.heq .coef.pos{color:var(--green)}
+.heq .coef.neg{color:var(--coral)}
+</style>
+</head>
+<body>
+<div class="app">
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sb">
+  <div class="sb-title">💪 Mon Suivi</div>
+  <div class="prof-sw">
+    <button class="pb af" id="btn-f" onclick="setProfile('f')">♀ Elle</button>
+    <button class="pb" id="btn-m" onclick="setProfile('m')">♂ Lui</button>
+  </div>
+  <div class="sep">Suivi</div>
+  <button class="nav active" onclick="goTo('bilan')"><span class="ic">📊</span><span>Tableau de bord</span></button>
+  <button class="nav" onclick="goTo('profil')"><span class="ic">👤</span><span>Mon profil</span></button>
+  <button class="nav" onclick="goTo('objectif')"><span class="ic">🎯</span><span>Mon objectif</span></button>
+  <button class="nav" onclick="goTo('poids')"><span class="ic">⚖️</span><span>Poids & IMC</span></button>
+  <button class="nav" onclick="goTo('mensus')"><span class="ic">📏</span><span>Mensurations</span></button>
+  <div class="sep">Quotidien</div>
+  <button class="nav" onclick="goTo('sport')"><span class="ic">🏃</span><span>Sport & Activité</span></button>
+  <button class="nav" onclick="goTo('pause')"><span class="ic">⏸️</span><span>Pause active</span></button>
+  <button class="nav" onclick="goTo('alim')"><span class="ic">🍽️</span><span>Alimentation</span></button>
+  <button class="nav" onclick="goTo('glp1')"><span class="ic">🌿</span><span>GLP-1 naturel</span></button>
+  <button class="nav" onclick="goTo('hydra')"><span class="ic">💧</span><span>Hydratation</span></button>
+  <button class="nav" onclick="goTo('sommeil')"><span class="ic">🌙</span><span>Sommeil</span></button>
+  <button class="nav" onclick="goTo('sleep-opt')"><span class="ic">✨</span><span>Optimiser le sommeil</span></button>
+  <button class="nav" onclick="goTo('humeur')"><span class="ic">💬</span><span>Humeur & Énergie</span></button>
+  <div class="sb-foot">
+    <button class="sb-btn" onclick="exportData()">⬇️ Exporter (JSON)</button>
+    <button class="sb-btn" onclick="importData()">⬆️ Importer</button>
+    <input type="file" id="imp-file" accept=".json" style="display:none" onchange="doImport(event)">
+    <button class="tbtn" onclick="toggleTheme()">🌓</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+<!-- ═══ BILAN ═══ -->
+<div class="sec active" id="s-bilan">
+  <div class="pt">📊 Tableau de bord</div>
+  <div id="enc-msg"></div>
+  <div id="streak-area"></div>
+  <div class="g4" id="bilan-metrics"></div>
+  <div class="g2">
+    <div class="card"><div class="ct">📈 Évolution du poids</div><div class="cw h220"><canvas id="c-bilan-p"></canvas></div></div>
+    <div class="card"><div class="ct">🎯 Progression objectif</div><div id="bilan-obj"></div></div>
+  </div>
+  <div class="card"><div class="ct">📅 Cette semaine</div><div id="bilan-sem"></div></div>
+  <div id="skin-advice"></div>
+</div>
+
+<!-- ═══ PROFIL ═══ -->
+<div class="sec" id="s-profil">
+  <div class="pt">👤 Mon profil</div>
+  <div class="card">
+    <div class="ct">Informations personnelles</div>
+    <div class="fr">
+      <div class="fg"><label>Prénom</label><input type="text" id="pr-nom" placeholder="ex: Sophie"></div>
+      <div class="fg"><label>Âge</label><input type="number" id="pr-age" min="10" max="110" placeholder="ex: 35"></div>
+      <div class="fg"><label>Taille (cm)</label><input type="number" id="pr-taille" min="100" max="250" placeholder="ex: 165"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Niveau d'activité habituel</label>
+        <select id="pr-activite">
+          <option value="1.2">Sédentaire (peu ou pas de sport)</option>
+          <option value="1.375" selected>Légèrement actif (1–3 j/semaine)</option>
+          <option value="1.55">Modérément actif (3–5 j/semaine)</option>
+          <option value="1.725">Très actif (6–7 j/semaine)</option>
+          <option value="1.9">Extrêmement actif (2x/jour)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Objectif principal</label>
+        <select id="pr-goal">
+          <option value="loss">Perte de poids</option>
+          <option value="maintain">Maintien du poids</option>
+          <option value="gain">Prise de masse</option>
+          <option value="health">Santé générale</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr" id="pr-f-fields">
+      <div class="fg"><label>Cycle menstruel <span class="tip-lbl">optionnel — influence l'hydratation et l'énergie</span></label>
+        <select id="pr-cycle">
+          <option value="">Non renseigné</option>
+          <option value="regular">Régulier</option>
+          <option value="irregular">Irrégulier</option>
+          <option value="menopause">Ménopause / post-ménopause</option>
+          <option value="pill">Contraception hormonale</option>
+        </select>
+      </div>
+      <div class="fg"><label>Peau sèche <span class="tip-lbl">pour conseils personnalisés</span></label>
+        <select id="pr-peau">
+          <option value="">Non</option>
+          <option value="mild">Légère</option>
+          <option value="moderate">Modérée</option>
+          <option value="severe">Sévère (depuis longtemps)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btnp" onclick="saveProfil()">💾 Enregistrer le profil</button>
+  </div>
+  <div id="profil-display"></div>
+</div>
+
+<!-- ═══ OBJECTIF ═══ -->
+<div class="sec" id="s-objectif">
+  <div class="pt">🎯 Mon objectif</div>
+  <div class="card">
+    <div class="ct">Définir mon objectif de poids</div>
+    <div class="fr">
+      <div class="fg"><label>Mon poids actuel (kg)</label><input type="number" id="obj-act" step="0.1" placeholder="ex: 78" oninput="calcObjCible()"></div>
+      <div class="fg"><label>Je veux perdre (kg)</label><input type="number" id="obj-perdre" step="0.1" min="0" placeholder="ex: 19" oninput="calcObjCible()"></div>
+      <div class="fg"><label>Poids cible à atteindre (kg) <span class="tip-lbl">calculé auto</span></label><input type="number" id="obj-cible" step="0.1" placeholder="ex: 59" oninput="calcObjPerdre()" style="font-weight:600;color:var(--green-d)"></div>
+      <div class="fg"><label>Date cible</label><input type="date" id="obj-date"></div>
+    </div>
+    <div class="fg full"><label>Mon intention — pourquoi je veux atteindre cet objectif</label>
+      <textarea id="obj-int" placeholder="Me sentir mieux dans mon corps, avoir plus d'énergie, être en forme pour..."></textarea>
+    </div>
+    <button class="btn btnp" onclick="saveObj()">💾 Enregistrer</button>
+  </div>
+  <div id="obj-display"></div>
+</div>
+
+<!-- ═══ POIDS ═══ -->
+<div class="sec" id="s-poids">
+  <div class="pt">⚖️ Poids & IMC</div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Enregistrer</div>
+      <div class="fr">
+        <div class="fg"><label>Date</label><input type="date" id="p-date"></div>
+        <div class="fg"><label>Poids (kg)</label><input type="number" id="p-poids" step="0.1" min="30" max="300" placeholder="68.5"></div>
+      </div>
+      <div class="fg"><label>Taille (cm) <span class="tip-lbl">si différente du profil</span></label><input type="number" id="p-taille" step="1" min="100" max="250" placeholder="Récupérée du profil"></div>
+      <button class="btn btnp" onclick="savePoids()">+ Enregistrer</button>
+    </div>
+    <div class="card">
+      <div class="ct">Indice de Masse Corporelle</div>
+      <div class="imc-big" id="imc-val">—</div>
+      <div style="font-size:13px;color:var(--text2);margin:3px 0 13px" id="imc-cat">Saisissez taille et poids</div>
+      <div class="imc-bar"><div class="imc-ndl" id="imc-ndl" style="left:0%"></div></div>
+      <div class="imc-sc"><span>16</span><span>Maigreur</span><span>Normal</span><span>Surpoids</span><span>Obésité</span><span>40</span></div>
+      <div id="rth-display" style="margin-top:12px"></div>
+    </div>
+  </div>
+  <div class="card"><div class="ct">Courbe de poids</div><div class="cw h240"><canvas id="c-poids"></canvas></div></div>
+  <div class="card"><div class="ct">Historique</div><div id="log-poids"></div></div>
+</div>
+
+<!-- ═══ MENSURATIONS ═══ -->
+<div class="sec" id="s-mensus">
+  <div class="pt">📏 Mensurations</div>
+  <div class="card">
+    <div class="ct">Enregistrer mes mesures</div>
+    <div class="fr">
+      <div class="fg"><label>Date</label><input type="date" id="m-date"></div>
+      <div class="fg"><label id="m-poit-lbl">Poitrine (cm)</label><input type="number" id="m-poit" step="0.5" placeholder="90"></div>
+      <div class="fg"><label>Taille (cm)</label><input type="number" id="m-taille" step="0.5" placeholder="70"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Hanche (cm)</label><input type="number" id="m-hanche" step="0.5" placeholder="95"></div>
+      <div class="fg"><label>Cuisse (cm)</label><input type="number" id="m-cuisse" step="0.5" placeholder="56"></div>
+      <div class="fg"><label>Mollet (cm)</label><input type="number" id="m-mollet" step="0.5" placeholder="36"></div>
+      <div class="fg"><label>Bras (cm)</label><input type="number" id="m-bras" step="0.5" placeholder="28"></div>
+    </div>
+    <button class="btn btnp" onclick="saveMensus()">+ Enregistrer</button>
+  </div>
+  <div class="card">
+    <div class="ct">Courbes</div>
+    <div id="mensus-filt" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px"></div>
+    <div class="cw h280"><canvas id="c-mensus"></canvas></div>
+  </div>
+  <div class="card"><div class="ct">Début vs maintenant</div><div id="mensus-cmp"></div></div>
+</div>
+
+<!-- ═══ SPORT ═══ -->
+<div class="sec" id="s-sport">
+  <div class="pt">🏃 Sport & Activité</div>
+  <div class="card">
+    <div class="ct">Enregistrer une séance</div>
+    <div class="fr">
+      <div class="fg"><label>Date</label><input type="date" id="sp-date"></div>
+    </div>
+    <label>Type d'activité</label>
+    <div class="stbtns" id="sport-type-btns">
+      <button class="stbtn active" onclick="setSportType('cardio')">🏊 Cardio</button>
+      <button class="stbtn" onclick="setSportType('muscu')">💪 Renforcement</button>
+      <button class="stbtn" onclick="setSportType('rando')">🥾 Randonnée / Marche</button>
+      <button class="stbtn" onclick="setSportType('course')">🏃 Course à pied</button>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Activité précise</label><input type="text" id="sp-act" placeholder="ex: Natation, Vélo, Yoga..."></div>
+      <div class="fg"><label>Durée (min)</label><input type="number" id="sp-dur" min="5" max="600" placeholder="45"></div>
+    </div>
+    <div class="fr" id="sp-dist-row" style="display:none">
+      <div class="fg"><label>Distance (km)</label><input type="number" id="sp-dist" step="0.1" min="0" placeholder="ex: 12.5"></div>
+      <div class="fg"><label>Dénivelé (m) <span class="tip-lbl">optionnel</span></label><input type="number" id="sp-deni" step="10" min="0" placeholder="ex: 450"></div>
+    </div>
+    <div id="sp-diff-row" style="display:none;margin-bottom:9px">
+      <label>Difficulté / terrain</label>
+      <div class="dbtns" id="diff-btns">
+        <button class="dbtn active" onclick="setDiff('facile')">🟢 Facile — plat</button>
+        <button class="dbtn" onclick="setDiff('moyen')">🟡 Moyen — légère pente</button>
+        <button class="dbtn" onclick="setDiff('difficile')">🔴 Difficile — dénivelé, terrain varié</button>
+        <button class="dbtn" onclick="setDiff('vosges')">⛰️ Vosges / montagne</button>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Calories brûlées <span class="tip-lbl">optionnel</span></label><input type="number" id="sp-cal" min="0" placeholder="250"></div>
+      <div class="fg" id="pace-display" style="display:none">
+        <label>Allure calculée</label>
+        <div id="pace-val" style="font-size:14px;font-weight:600;padding:7px 0;color:var(--purple)">—</div>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label>Intensité ressentie</label>
+      <div class="rrow" id="sp-int-btns">
+        <button class="rb" onclick="setSportInt(1)" title="Légère">😌</button>
+        <button class="rb active" onclick="setSportInt(2)" title="Modérée">😅</button>
+        <button class="rb" onclick="setSportInt(3)" title="Intense">🔥</button>
+        <button class="rb" onclick="setSportInt(4)" title="Extrême">💀</button>
+      </div>
+    </div>
+    <div class="fg full"><label>Notes</label><textarea id="sp-notes" placeholder="Ressenti, conditions météo, douleurs..." style="min-height:48px"></textarea></div>
+    <div id="sp-hydro-tip" style="display:none;margin-bottom:10px"></div>
+    <button class="btn btnp" onclick="saveSport()">+ Enregistrer la séance</button>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">Séances par semaine</div><div class="cw h200"><canvas id="c-sport-w"></canvas></div></div>
+    <div class="card"><div class="ct">Répartition des activités</div><div class="cw h200"><canvas id="c-sport-pie"></canvas></div></div>
+  </div>
+  <div class="card"><div class="ct">Journal des séances</div><div id="log-sport"></div></div>
+</div>
+
+<!-- ═══ ALIMENTATION ═══ -->
+<div class="sec" id="s-alim">
+  <div class="pt">🍽️ Alimentation</div>
+  <div class="card">
+    <div class="ct">Enregistrer un repas</div>
+    <div class="fr"><div class="fg"><label>Date</label><input type="date" id="al-date"></div></div>
+    <label>Type de repas</label>
+    <div class="mbtns" id="meal-btns">
+      <button class="mbtn active" onclick="setMeal('petit-dej')">☀️ Petit-déj</button>
+      <button class="mbtn" onclick="setMeal('dejeuner')">🌞 Déjeuner</button>
+      <button class="mbtn" onclick="setMeal('diner')">🌙 Dîner</button>
+      <button class="mbtn" onclick="setMeal('collation')">🍎 Collation</button>
+    </div>
+    <div class="fg full"><label>Description du repas</label>
+      <textarea id="al-desc" placeholder="Salade de quinoa, poulet grillé, légumes vapeur..." style="min-height:55px"></textarea>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Calories <span class="tip-lbl">optionnel</span></label><input type="number" id="al-cal" placeholder="450"></div>
+      <div class="fg"><label>Protéines (g) <span class="tip-lbl">optionnel</span></label><input type="number" id="al-prot" placeholder="35"></div>
+      <div class="fg"><label>Ressenti</label>
+        <select id="al-res">
+          <option value="">—</option>
+          <option value="très sain">🥗 Très sain</option>
+          <option value="équilibré">👍 Équilibré</option>
+          <option value="moyen">😐 Moyen</option>
+          <option value="écart">🍕 Petit écart</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btnp" onclick="saveAlim()">+ Enregistrer</button>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">Calories / jour (7j)</div><div class="cw h200"><canvas id="c-cal"></canvas></div></div>
+    <div class="card"><div class="ct">Aujourd'hui</div><div id="repas-today"></div></div>
+  </div>
+  <div class="card"><div class="ct">Journal</div><div id="log-alim"></div></div>
+</div>
+
+<!-- ═══ HYDRATATION ═══ -->
+<div class="sec" id="s-hydra">
+  <div class="pt">💧 Hydratation</div>
+  <div id="skin-hydro-tip"></div>
+  <div class="card">
+    <div class="ct">Aujourd'hui — <span id="h-today">0 L</span> net / <span id="h-goal-txt">2 L</span> objectif</div>
+    <div class="pb-wrap"><div class="pb-fill" id="h-prog" style="width:0%;background:var(--blue)"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:12px"><span>0</span><span id="h-goal-max">2 L</span></div>
+    <div id="h-drops" class="hdrops"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin:6px 0 4px">Eau & boissons hydratantes</div>
+    <div class="wgrid">
+      <button class="wbtn" onclick="addDrink(.15,'eau')">💧 +150ml eau</button>
+      <button class="wbtn" onclick="addDrink(.25,'eau')">💧 +250ml eau</button>
+      <button class="wbtn" onclick="addDrink(.25,'pulco')" style="background:var(--amber-l);color:var(--amber-d)">🍋 Pulco dilué (250ml)</button>
+      <button class="wbtn" onclick="addDrink(.5,'eau')">💧 +500ml eau</button>
+      <button class="wbtn" onclick="addDrink(1,'eau')">🍶 +1L eau</button>
+      <button class="wbtn" onclick="addDrink(.25,'tisane')">🍵 Tisane (250ml)</button>
+      <button class="wbtn" onclick="addDrink(.25,'the')">🍵 Thé (250ml)</button>
+      <button class="wbtn" onclick="addDrink(.25,'cafe')">☕ Café (250ml)</button>
+      <button class="wbtn" onclick="addDrink(.33,'jus')">🧃 Jus (330ml)</button>
+      <button class="wbtn" onclick="addDrink(.33,'soda_zero')" style="position:relative">🥤 Soda zéro (330ml) <span style="font-size:10px;opacity:.7">⚠️</span></button>
+    </div>
+    <div style="font-size:11px;color:var(--amber-d);background:var(--amber-l);border-radius:var(--r);padding:6px 10px;margin-top:-4px;margin-bottom:8px">⚠️ <strong>Soda zéro</strong> : hydratation correcte (85%) mais les édulcorants perturbent le microbiote et la sensibilité à l'insuline en usage régulier. Occasionnel = ok. Quotidien = contre-productif pour ton GLP-1.</div>
+    <div style="font-size:12px;font-weight:600;color:var(--coral-d);margin:10px 0 4px">Alcool & déshydratants <span class="tip-lbl">(comptent en négatif)</span></div>
+    <div class="wgrid">
+      <button class="wbtn neg" onclick="addDrink(.25,'biere_25')">🍺 Bière 25cl</button>
+      <button class="wbtn neg" onclick="addDrink(.5,'biere')">🍺 Bière 50cl</button>
+      <button class="wbtn neg" onclick="addDrink(.54,'biere_picon')">🍺 Bière-Picon 50cl</button>
+      <button class="wbtn" onclick="addDrink(.33,'biere_sans')" style="background:var(--green-l);color:var(--green-d)">🍺 Bière sans alcool 33cl</button>
+      <button class="wbtn neg" onclick="addDrink(1,'vin')">🍷 Verre de vin</button>
+      <button class="wbtn neg" onclick="addDrink(1,'shoot')">🥃 Shot / spiritueux</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <input type="number" id="h-custom" step="0.05" min="0" placeholder="Autre (L)" style="max-width:120px">
+      <select id="h-type" style="max-width:160px">
+        <option value="eau">Eau</option>
+        <option value="tisane">Tisane</option>
+        <option value="the">Thé</option>
+        <option value="cafe">Café</option>
+        <option value="jus">Jus</option>
+        <option value="soda">Soda sucré</option>
+        <option value="pulco">Pulco / citron dilué</option>
+        <option value="soda_zero">Soda zéro / light</option>
+        <option value="biere_sans">Bière sans alcool</option>
+        <option value="biere_25">Bière 25cl</option>
+        <option value="vin">Vin</option>
+        <option value="biere_picon">Bière-Picon 50cl</option>
+        <option value="biere">Bière</option>
+        <option value="shoot">Spiritueux</option>
+      </select>
+      <button class="btn btn-sm" onclick="addCustomDrink()">Ajouter</button>
+      <button class="btn btn-sm" style="color:var(--text3)" onclick="resetWater()">↺ Reset</button>
+    </div>
+    <div id="h-breakdown" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Équivalences hydratation</div>
+    <table class="heq">
+      <tr><th>Boisson</th><th>Volume bu</th><th>Équivalent eau nette</th><th>Note</th></tr>
+      <tr><td>💧 Eau</td><td>1 L</td><td class="coef pos">1,00 L</td><td>Référence</td></tr>
+      <tr><td>🍵 Tisane</td><td>1 L</td><td class="coef pos">0,95 L</td><td>Quasi-équivalent</td></tr>
+      <tr><td>🍋 Pulco citron dilué</td><td>1 L</td><td class="coef pos">0,93 L</td><td>✅ Sans édulcorant, jus citron naturel — excellent choix</td></tr>
+      <tr><td>🍵 Thé léger</td><td>1 L</td><td class="coef pos">0,88 L</td><td>Léger diurétique</td></tr>
+      <tr><td>☕ Café</td><td>1 L</td><td class="coef pos">0,82 L</td><td>Diurétique modéré si >4 tasses</td></tr>
+      <tr><td>🧃 Jus de fruit</td><td>1 L</td><td class="coef pos">0,80 L</td><td>Sucre ralentit l'absorption</td></tr>
+      <tr><td>🥤 Soda sucré</td><td>1 L</td><td class="coef pos">0,75 L</td><td>Sucre ralentit l'absorption</td></tr>
+      <tr><td>🥤 Soda zéro</td><td>1 L</td><td class="coef pos">0,85 L</td><td>⚠️ Édulcorants → microbiote, insuline si usage quotidien</td></tr>
+      <tr><td>🍷 Vin (12°)</td><td>1 verre 15cl</td><td class="coef neg">−0,10 L</td><td>Net négatif — compenser 1,5×</td></tr>
+      <tr><td>🍺 Bière sans alcool</td><td>33cl</td><td class="coef pos">0,26 L</td><td>✅ Hydratante, pas d'effet diurétique</td></tr>
+      <tr><td>🍺 Bière 25cl (5°)</td><td>25cl</td><td class="coef neg">−0,08 L</td><td>Net légèrement négatif</td></tr>
+      <tr><td>🍺 Bière 50cl (5°)</td><td>50cl</td><td class="coef neg">−0,15 L</td><td>Net négatif</td></tr>
+      <tr><td>🍺 Bière-Picon 50cl</td><td>54cl</td><td class="coef neg">−0,30 L</td><td>⚠️ Bière + Picon 18° — double effet déshydratant</td></tr>
+      <tr><td>🥃 Spiritueux (40°)</td><td>4cl shot</td><td class="coef neg">−0,12 L</td><td>Fort diurétique</td></tr>
+    </table>
+  </div>
+  <div class="card"><div class="ct">Hydratation — 14 derniers jours</div><div class="cw h200"><canvas id="c-hydra"></canvas></div></div>
+</div>
+
+<!-- ═══ SOMMEIL ═══ -->
+<div class="sec" id="s-sommeil">
+  <div class="pt">🌙 Sommeil</div>
+  <div class="card">
+    <div class="ct">Enregistrer ma nuit</div>
+    <div class="fr">
+      <div class="fg"><label>Date (matin du lever)</label><input type="date" id="sl-date"></div>
+      <div class="fg"><label>Coucher</label><input type="time" id="sl-cou" value="23:00" oninput="calcSlp()"></div>
+      <div class="fg"><label>Lever</label><input type="time" id="sl-lev" value="07:00" oninput="calcSlp()"></div>
+    </div>
+    <label>Qualité du sommeil</label>
+    <div class="stars" id="slp-stars">
+      <span class="star" onclick="setSlpQ(1)">☆</span><span class="star" onclick="setSlpQ(2)">☆</span>
+      <span class="star" onclick="setSlpQ(3)">☆</span><span class="star" onclick="setSlpQ(4)">☆</span>
+      <span class="star" onclick="setSlpQ(5)">☆</span>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Durée calculée : <strong id="sl-calc">—</strong></div>
+    <div class="fg full"><label>Notes</label><textarea id="sl-notes" placeholder="Réveils, rêves, qualité générale..." style="min-height:48px"></textarea></div>
+    <button class="btn btnp" onclick="saveSommeil()">+ Enregistrer</button>
+  </div>
+  <div class="card"><div class="ct">Courbe de sommeil — 30 derniers jours</div><div class="cw h240"><canvas id="c-slp"></canvas></div></div>
+  <div class="card"><div class="ct">Statistiques</div><div id="slp-stats" class="g3"></div></div>
+</div>
+
+<!-- ═══ HUMEUR ═══ -->
+<div class="sec" id="s-humeur">
+  <div class="pt">💬 Humeur & Énergie</div>
+  <div class="card">
+    <div class="ct">Comment je me sens aujourd'hui ?</div>
+    <div class="fr"><div class="fg"><label>Date</label><input type="date" id="hu-date"></div></div>
+    <label>Humeur (1 = très bas, 5 = excellent)</label>
+    <div class="rrow" id="hu-btns">
+      <button class="rb" onclick="setHum(1)">😔</button><button class="rb" onclick="setHum(2)">😕</button>
+      <button class="rb active" onclick="setHum(3)">😐</button><button class="rb" onclick="setHum(4)">😊</button>
+      <button class="rb" onclick="setHum(5)">😄</button>
+    </div>
+    <label>Niveau d'énergie</label>
+    <div class="rrow" id="en-btns">
+      <button class="rb" onclick="setEn(1)">🪫</button><button class="rb" onclick="setEn(2)">😴</button>
+      <button class="rb active" onclick="setEn(3)">⚡</button><button class="rb" onclick="setEn(4)">🔋</button>
+      <button class="rb" onclick="setEn(5)">🚀</button>
+    </div>
+    <div class="fg full" style="margin-top:6px"><label>Journal du jour</label>
+      <textarea id="hu-notes" placeholder="Ce que j'ai ressenti, ma motivation, mes défis..."></textarea>
+    </div>
+    <button class="btn btnp" onclick="saveHumeur()">+ Enregistrer</button>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">Évolution humeur</div><div class="cw h200"><canvas id="c-hum"></canvas></div></div>
+    <div class="card"><div class="ct">Niveau d'énergie</div><div class="cw h200"><canvas id="c-en"></canvas></div></div>
+  </div>
+  <div class="card"><div class="ct">Journal</div><div id="log-hum"></div></div>
+</div>
+
+
+<!-- ═══ PAUSE ACTIVE ═══ -->
+<div class="sec" id="s-pause">
+  <div class="pt">⏸️ <span>Pause active</span></div>
+  <div class="banner info"><span class="ban-ic">💡</span><div class="ban-t"><div class="ban-h">5–10 min suffisent</div><div class="ban-s">3 micro-séances par jour = mêmes bénéfices qu'une séance de 30 min. Et ça coupe le cycle cortisol mieux qu'une pause café.</div></div></div>
+
+  <div class="card">
+    <div class="ct">Choisir ma pause</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="pause-cat-btns">
+      <button class="mbtn active" onclick="setPauseCat('bureau')">💻 Bureau (assis→debout)</button>
+      <button class="mbtn" onclick="setPauseCat('cardio')">🏃 Cardio léger</button>
+      <button class="mbtn" onclick="setPauseCat('force')">💪 Renforcement</button>
+      <button class="mbtn" onclick="setPauseCat('zen')">🧘 Étirements & Respiration</button>
+    </div>
+    <div id="pause-exercises"></div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn btnp" id="pause-start-btn" onclick="startPause()">▶ Démarrer la pause</button>
+      <div id="pause-timer" style="font-size:22px;font-weight:700;color:var(--purple);display:none">00:00</div>
+      <button class="btn btn-sm" id="pause-stop-btn" onclick="stopPause()" style="display:none">⏹ Arrêter</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Mes pauses aujourd'hui</div>
+    <div id="pause-today-count" style="font-size:28px;font-weight:700;color:var(--purple);margin-bottom:4px">0</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">pauses effectuées — objectif : 3/jour</div>
+    <div class="pb-wrap"><div class="pb-fill" id="pause-prog" style="width:0%;background:var(--purple)"></div></div>
+    <button class="btn btnp" style="margin-top:12px" onclick="logPause()">✅ Valider cette pause</button>
+  </div>
+
+  <div class="card">
+    <div class="ct">Bibliothèque des exercices</div>
+    <div class="g2" id="exercise-library"></div>
+  </div>
+</div>
+
+<!-- ═══ GLP-1 ═══ -->
+<div class="sec" id="s-glp1">
+  <div class="pt">🌿 <span>GLP-1 naturel</span></div>
+  <div class="banner tip"><span class="ban-ic">🧬</span><div class="ban-t">
+    <div class="ban-h">GLP-1 — l'hormone de satiété que ton corps peut produire lui-même</div>
+    <div class="ban-s">C'est ce que les médicaments comme Ozempic imitent. En optimisant ton alimentation, ton sport et ton sommeil, tu boostes ta production naturelle — moins de fringales, moins d'envies de sucre, meilleure glycémie.</div>
+  </div></div>
+
+  <div class="card">
+    <div class="ct">✅ Ma checklist GLP-1 du jour</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Coche ce que tu as fait aujourd'hui</div>
+    <div id="glp1-checklist"></div>
+    <div style="margin-top:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Score du jour : <span id="glp1-score" style="color:var(--purple)">0/10</span></div>
+      <div class="pb-wrap"><div class="pb-fill" id="glp1-prog" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <button class="btn btnp" style="margin-top:12px" onclick="saveGlp1()">💾 Enregistrer</button>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">🍽️ Aliments qui boostent le GLP-1</div>
+      <div class="ll" id="glp1-foods"></div>
+    </div>
+    <div class="card">
+      <div class="ct">💊 Compléments documentés</div>
+      <div style="font-size:11px;color:var(--coral-d);margin-bottom:8px">⚠️ Consulte ton médecin avant toute supplémentation</div>
+      <div class="ll" id="glp1-supps"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📈 Mon score GLP-1 — 14 derniers jours</div>
+    <div class="cw h200"><canvas id="c-glp1"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ OPTIMISER LE SOMMEIL ═══ -->
+<div class="sec" id="s-sleep-opt">
+  <div class="pt">✨ <span>Optimiser le sommeil</span></div>
+
+  <div class="g2">
+    <div class="card" style="border:2px solid var(--pink);background:var(--pink-l)">
+      <div class="ct" style="color:var(--pink-d)">♀ Moi — Mal à m'endormir</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Cause principale : cortisol élevé le soir qui bloque la mélatonine</div>
+      <div id="sleep-toi"></div>
+    </div>
+    <div class="card" style="border:2px solid var(--blue);background:var(--blue-l)">
+      <div class="ct" style="color:var(--blue-d)">♂ Lui — Réveil nocturne avec rumination</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Cause : stress + apnée traitée. Le cerveau se réveille et cogite</div>
+      <div id="sleep-lui"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🌙 Ma routine du soir — Qui fait quoi ?</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="mbtn active" onclick="setSleepProfile('f')">♀ Ma routine à moi</button>
+      <button class="mbtn" onclick="setSleepProfile('m')">♂ Routine de mon conjoint</button>
+    </div>
+    <div id="sleep-routine"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🧠 Techniques anti-rumination (pour lui)</div>
+    <div id="rumination-techniques"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">💊 Compléments naturels — ce qui est prouvé</div>
+    <div style="font-size:11px;color:var(--coral-d);margin-bottom:10px">⚠️ Discutes-en avec votre médecin qui vous suit déjà pour le stress</div>
+    <div class="g2" id="sleep-supps"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">✅ Checklist bonne nuit</div>
+    <div class="g2">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--pink-d);margin-bottom:8px">♀ Pour toi</div>
+        <div id="sleep-check-f"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--blue-d);margin-bottom:8px">♂ Pour lui</div>
+        <div id="sleep-check-m"></div>
+      </div>
+    </div>
+    <button class="btn btnp" style="margin-top:12px" onclick="saveSleepCheck()">💾 Enregistrer la nuit</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ════════════════ CONSTANTS ════════════════
+const DRINK_COEF={eau:1,tisane:.95,pulco:.93,the:.88,cafe:.82,jus:.80,soda:.75,soda_zero:.85,biere_sans:.78,vin:-0.67,biere:-0.30,biere_25:-0.30,biere_picon:-0.56,shoot:-3.0};
+// vin 15cl → net -0.10 : 0.15 × -0.67 = -0.10 ✓
+// biere 50cl → net -0.15 : 0.5 × -0.30 = -0.15 ✓
+// shot 4cl → net -0.12 : 0.04 × -3.0 = -0.12 ✓
+const DRINK_LABEL={eau:'💧 Eau',tisane:'🍵 Tisane',pulco:'🍋 Pulco/citron dilué',the:'🍵 Thé',cafe:'☕ Café',jus:'🧃 Jus',soda:'🥤 Soda sucré',soda_zero:'🥤 Soda zéro',biere_sans:'🍺 Bière sans alcool',vin:'🍷 Vin',biere:'🍺 Bière 50cl',biere_25:'🍺 Bière 25cl',biere_picon:'🍺 Bière-Picon 50cl',shoot:'🥃 Spiritueux'};
+const SPORT_TYPE_LABEL={cardio:'Cardio',muscu:'Muscu',rando:'Rando/Marche',course:'Course'};
+const MENS_KEYS=['poit','taille','hanche','cuisse','mollet','bras'];
+const MENS_LABELS_F={poit:'Poitrine',taille:'Taille',hanche:'Hanche',cuisse:'Cuisse',mollet:'Mollet',bras:'Bras'};
+const MENS_LABELS_M={poit:'Pectoraux',taille:'Taille',hanche:'Hanche',cuisse:'Cuisse',mollet:'Mollet',bras:'Bras'};
+const MENS_COLORS={poit:'#D4537E',taille:'#BA7517',hanche:'#7F77DD',cuisse:'#E24B4A',mollet:'#1D9E75',bras:'#378ADD'};
+
+// ════════════════ STATE ════════════════
+let profile='f', slpQ=3, sportInt=2, humVal=3, enVal=3, mealType='petit-dej', sportType='cardio', diffType='facile';
+let mensActive=[...MENS_KEYS];
+let charts={};
+
+const KEY=t=>`sh_${profile}_${t}`;
+const gD=t=>{try{return JSON.parse(localStorage.getItem(KEY(t))||'[]')}catch{return[]}};
+const sD=(t,a)=>{try{localStorage.setItem(KEY(t),JSON.stringify(a))}catch{}};
+const gO=(t,d={})=>{try{return JSON.parse(localStorage.getItem(KEY(t))||JSON.stringify(d))}catch{return d}};
+const sO=(t,o)=>{try{localStorage.setItem(KEY(t),JSON.stringify(o))}catch{}};
+const today=()=>new Date().toISOString().slice(0,10);
+const fd=d=>d?d.slice(5).replace('-','/'):'';
+const round2=v=>Math.round(v*100)/100;
+
+// ════════════════ INIT ════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  const t=today();
+  ['p-date','m-date','sp-date','sl-date','hu-date','al-date','obj-date'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value=t;
+  });
+  if(localStorage.getItem('sh_theme')==='dark') document.documentElement.setAttribute('data-theme','dark');
+  setProfile('f');
+  setSlpQ(3); setSportInt(2); setHum(3); setEn(3);
+  loadProfil();
+  updateSportUI();
+  updatePaceDisplay();
+  updateSportHydroTip();
+  ['sp-dur','sp-dist'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{updatePaceDisplay();updateSportHydroTip()}));
+  document.getElementById('sp-deni')?.addEventListener('input',updateSportHydroTip);
+});
+
+function toggleTheme(){
+  const d=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',d?'light':'dark');
+  localStorage.setItem('sh_theme',d?'light':'dark');
+  refreshCharts();
+}
+
+// ════════════════ PROFILE ════════════════
+function setProfile(p){
+  profile=p;
+  document.getElementById('btn-f').className='pb'+(p==='f'?' af':'');
+  document.getElementById('btn-m').className='pb'+(p==='m'?' am':'');
+  const fl=document.getElementById('m-poit-lbl'); if(fl) fl.textContent=p==='f'?'Poitrine (cm)':'Pectoraux (cm)';
+  const ff=document.getElementById('pr-f-fields'); if(ff) ff.style.display=p==='f'?'':'none';
+  loadProfil();
+  refreshAll();
+}
+
+function saveProfil(){
+  const pr={
+    nom:document.getElementById('pr-nom').value,
+    age:parseInt(document.getElementById('pr-age').value)||null,
+    taille:parseInt(document.getElementById('pr-taille').value)||null,
+    activite:parseFloat(document.getElementById('pr-activite').value)||1.375,
+    goal:document.getElementById('pr-goal').value,
+    cycle:document.getElementById('pr-cycle')?.value||'',
+    peau:document.getElementById('pr-peau')?.value||''
+  };
+  sO('profil',pr);
+  renderProfilDisplay();
+  refreshAll();
+  alert('Profil enregistré !');
+}
+
+function loadProfil(){
+  const pr=gO('profil');
+  if(pr.nom) document.getElementById('pr-nom').value=pr.nom;
+  if(pr.age) document.getElementById('pr-age').value=pr.age;
+  if(pr.taille) document.getElementById('pr-taille').value=pr.taille;
+  if(pr.activite) document.getElementById('pr-activite').value=pr.activite;
+  if(pr.goal) document.getElementById('pr-goal').value=pr.goal;
+  if(pr.cycle&&document.getElementById('pr-cycle')) document.getElementById('pr-cycle').value=pr.cycle;
+  if(pr.peau&&document.getElementById('pr-peau')) document.getElementById('pr-peau').value=pr.peau;
+  // Pre-fill objectif form from saved data
+  const obj=gO('objectif');
+  const pArr=gD('poids');
+  const lastP=pArr.length?pArr[pArr.length-1].poids:null;
+  const actEl=document.getElementById('obj-act');
+  if(actEl&&!actEl.value){
+    if(obj.actuel) actEl.value=obj.actuel;
+    else if(lastP) actEl.value=lastP;
+  }
+  if(obj.cible){
+    const cEl=document.getElementById('obj-cible'); if(cEl) cEl.value=obj.cible;
+    const pEl=document.getElementById('obj-perdre');
+    const act=parseFloat(actEl?.value)||obj.actuel;
+    if(pEl&&act) pEl.value=(act-obj.cible).toFixed(1);
+  }
+  if(obj.date){const dEl=document.getElementById('obj-date');if(dEl)dEl.value=obj.date}
+  if(obj.intention){const iEl=document.getElementById('obj-int');if(iEl)iEl.value=obj.intention}
+  renderProfilDisplay();
+}
+
+function renderProfilDisplay(){
+  const pr=gO('profil');
+  const el=document.getElementById('profil-display');
+  if(!el||!pr.age) return;
+  const pArr=gD('poids');
+  const last=pArr.length?pArr[pArr.length-1]:null;
+  const bmr=last&&pr.taille&&pr.age?calcBMR(last.poids,pr.taille,pr.age):null;
+  const tdee=bmr?Math.round(bmr*pr.activite):null;
+  el.innerHTML=`<div class="card"><div class="ct">Résumé du profil — ${pr.nom||'Mon profil'}</div>
+    <div class="g3">
+      ${bmr?`<div class="mc"><div class="ml">Métabolisme de base</div><div class="mv">${Math.round(bmr)} kcal</div><div class="ms">calories/jour au repos</div></div>`:''}
+      ${tdee?`<div class="mc"><div class="ml">Dépense totale estimée</div><div class="mv">${tdee} kcal</div><div class="ms">calories/jour actif</div></div>`:''}
+      ${tdee&&pr.goal==='loss'?`<div class="mc"><div class="ml">Objectif déficit</div><div class="mv">${tdee-500} kcal</div><div class="ms">–500 kcal/jour = –0,5kg/sem</div></div>`:''}
+    </div>
+    ${pr.peau==='severe'||pr.peau==='moderate'?`<div class="skin-tip">🧴 <strong>Peau sèche</strong> — l'hydratation est un facteur clé. Ton objectif eau est augmenté de +0,3L. La qualité du sommeil, les oméga-3 et l'humidité ambiante jouent aussi. Pense à noter ton évolution dans le journal humeur.</div>`:''}
+    ${profile==='f'&&pr.cycle?`<div class="banner tip"><span class="ban-ic">🌸</span><div class="ban-t"><div class="ban-h">Cycle menstruel pris en compte</div><div class="ban-s">Phase lutéale : besoins en eau +0,3L, fatigue normale, rétention d'eau possible → ne pas paniquer si le poids monte légèrement.</div></div></div>`:''}
+  </div>`;
+}
+
+function calcBMR(w,h,a){
+  // Mifflin-St Jeor
+  if(profile==='f') return 10*w+6.25*h-5*a-161;
+  return 10*w+6.25*h-5*a+5;
+}
+
+// ════════════════ NAVIGATION ════════════════
+function goTo(id){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));
+  const secEl = document.getElementById('s-'+id);
+  if(secEl) secEl.classList.add('active');
+  document.querySelectorAll('.nav').forEach(b=>{if(b.getAttribute('onclick')?.includes("'"+id+"'")) b.classList.add('active')});
+  if(id==='pause') { renderPauseExercises(); renderPauseToday(); }
+  if(id==='glp1') renderGlp1Page();
+  if(id==='sleep-opt') renderSleepOptPage();
+  refreshCharts();
+}
+
+// ════════════════ SPORT UI ════════════════
+function setSportType(t){
+  sportType=t;
+  document.querySelectorAll('.stbtn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+t+"'")));
+  updateSportUI();
+}
+
+function updateSportUI(){
+  const isOutdoor=sportType==='rando'||sportType==='course';
+  document.getElementById('sp-dist-row').style.display=isOutdoor?'flex':'none';
+  document.getElementById('sp-diff-row').style.display=isOutdoor?'block':'none';
+  document.getElementById('pace-display').style.display=isOutdoor?'block':'none';
+  const actEl=document.getElementById('sp-act');
+  const placeholders={cardio:'Natation, Vélo, Elliptique...',muscu:'Squat, Développé couché, Full body...',rando:'Sentier des crêtes, GR10...',course:'Footing, Interval training...'};
+  if(actEl) actEl.placeholder=placeholders[sportType]||'';
+  updatePaceDisplay();
+  updateSportHydroTip();
+}
+
+function setDiff(d){
+  diffType=d;
+  document.querySelectorAll('.dbtn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+d+"'")));
+  updateSportHydroTip();
+}
+
+function setSportInt(n){
+  sportInt=n;
+  document.querySelectorAll('#sp-int-btns .rb').forEach((b,i)=>b.classList.toggle('active',i+1===n));
+  updateSportHydroTip();
+}
+
+function updatePaceDisplay(){
+  const dur=parseFloat(document.getElementById('sp-dur')?.value)||0;
+  const dist=parseFloat(document.getElementById('sp-dist')?.value)||0;
+  const el=document.getElementById('pace-val');
+  if(!el) return;
+  if(dur>0&&dist>0){
+    const minKm=dur/dist;
+    const m=Math.floor(minKm), s=Math.round((minKm-m)*60);
+    el.textContent=`${m}:${s.toString().padStart(2,'0')} min/km`;
+  } else { el.textContent='—'; }
+}
+
+function updateSportHydroTip(){
+  const el=document.getElementById('sp-hydro-tip');
+  if(!el) return;
+  if(sportType!=='rando'&&sportType!=='course'&&sportInt<3){ el.style.display='none'; return; }
+  const dur=parseFloat(document.getElementById('sp-dur')?.value)||0;
+  const deni=parseFloat(document.getElementById('sp-deni')?.value)||0;
+  let extra=0;
+  if(sportType==='rando'){
+    const diffMult={facile:0.4,moyen:0.55,difficile:0.7,vosges:0.8};
+    extra=dur/60*(diffMult[diffType]||0.5);
+    if(deni>0) extra+=deni/500*0.2;
+  } else if(sportType==='course'){
+    extra=dur/60*0.7;
+  } else {
+    extra=dur/60*(sportInt>=3?0.6:0.4);
+  }
+  extra=Math.round(extra*10)/10;
+  if(extra>0){
+    el.style.display='block';
+    el.innerHTML=`<div class="banner info"><span class="ban-ic">💧</span><div class="ban-t"><div class="ban-h">Hydratation pendant l'effort</div><div class="ban-s">Pour cette séance, bois environ <strong>+${extra} L</strong> supplémentaires. Commence avant, continue pendant (150–200ml/15min), et compense après.${sportType==='rando'&&diffType==='vosges'?' En montagne : halte régulière + électrolytes si >2h.':''}</div></div></div>`;
+  } else { el.style.display='none'; }
+}
+
+// ════════════════ SAVES ════════════════
+function savePoids(){
+  const d=document.getElementById('p-date').value||today();
+  const p=parseFloat(document.getElementById('p-poids').value);
+  if(!p){alert('Veuillez saisir un poids.');return}
+  const pr=gO('profil');
+  const t=parseFloat(document.getElementById('p-taille').value)||pr.taille||null;
+  const arr=gD('poids');
+  arr.push({date:d,poids:p,taille:t});
+  arr.sort((a,b)=>a.date.localeCompare(b.date));
+  sD('poids',arr);
+  document.getElementById('p-poids').value='';
+  refreshAll();
+}
+
+function saveMensus(){
+  const d=document.getElementById('m-date').value||today();
+  const e={date:d,
+    poit:parseFloat(document.getElementById('m-poit').value)||null,
+    taille:parseFloat(document.getElementById('m-taille').value)||null,
+    hanche:parseFloat(document.getElementById('m-hanche').value)||null,
+    cuisse:parseFloat(document.getElementById('m-cuisse').value)||null,
+    mollet:parseFloat(document.getElementById('m-mollet').value)||null,
+    bras:parseFloat(document.getElementById('m-bras').value)||null
+  };
+  if(!Object.values(e).slice(1).some(v=>v)){alert('Saisissez au moins une mesure.');return}
+  const arr=gD('mensus'); arr.push(e); arr.sort((a,b)=>a.date.localeCompare(b.date));
+  sD('mensus',arr);
+  MENS_KEYS.forEach(k=>document.getElementById('m-'+k) && (document.getElementById('m-'+k).value=''));
+  refreshAll();
+}
+
+function saveSport(){
+  const d=document.getElementById('sp-date').value||today();
+  const act=document.getElementById('sp-act').value||SPORT_TYPE_LABEL[sportType];
+  const dur=parseInt(document.getElementById('sp-dur').value)||0;
+  const dist=sportType==='rando'||sportType==='course'?parseFloat(document.getElementById('sp-dist').value)||null:null;
+  const deni=sportType==='rando'||sportType==='course'?parseInt(document.getElementById('sp-deni').value)||null:null;
+  const diff=sportType==='rando'||sportType==='course'?diffType:null;
+  const cal=parseInt(document.getElementById('sp-cal').value)||0;
+  const notes=document.getElementById('sp-notes').value;
+  const arr=gD('sport');
+  arr.push({date:d,type:sportType,activite:act,duree:dur,distance:dist,denivele:deni,difficulte:diff,calories:cal,intensite:sportInt,notes});
+  arr.sort((a,b)=>a.date.localeCompare(b.date));
+  sD('sport',arr);
+  ['sp-act','sp-dur','sp-dist','sp-deni','sp-cal','sp-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  refreshAll();
+}
+
+function saveAlim(){
+  const d=document.getElementById('al-date').value||today();
+  const desc=document.getElementById('al-desc').value;
+  if(!desc){alert('Décrivez votre repas.');return}
+  const cal=parseInt(document.getElementById('al-cal').value)||0;
+  const prot=parseInt(document.getElementById('al-prot').value)||0;
+  const res=document.getElementById('al-res').value;
+  const arr=gD('alim');
+  arr.push({date:d,type:mealType,desc,calories:cal,proteines:prot,ressenti:res});
+  arr.sort((a,b)=>a.date.localeCompare(b.date));
+  sD('alim',arr);
+  ['al-desc','al-cal','al-prot'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('al-res').value='';
+  refreshAll();
+}
+
+function saveSommeil(){
+  const d=document.getElementById('sl-date').value||today();
+  const dur=parseFloat(calcSlpDur());
+  if(!dur){alert('Saisissez heure coucher et lever.');return}
+  const arr=gD('sommeil');
+  arr.push({date:d,duree:dur,qualite:slpQ,coucher:document.getElementById('sl-cou').value,lever:document.getElementById('sl-lev').value,notes:document.getElementById('sl-notes').value});
+  arr.sort((a,b)=>a.date.localeCompare(b.date));
+  sD('sommeil',arr);
+  document.getElementById('sl-notes').value='';
+  refreshAll();
+}
+
+function saveHumeur(){
+  const d=document.getElementById('hu-date').value||today();
+  const notes=document.getElementById('hu-notes').value;
+  const arr=gD('humeur');
+  arr.push({date:d,humeur:humVal,energie:enVal,notes});
+  arr.sort((a,b)=>a.date.localeCompare(b.date));
+  sD('humeur',arr);
+  document.getElementById('hu-notes').value='';
+  refreshAll();
+}
+
+function calcObjCible(){
+  const act=parseFloat(document.getElementById('obj-act').value);
+  const perdre=parseFloat(document.getElementById('obj-perdre').value);
+  if(act>0&&perdre>0){
+    document.getElementById('obj-cible').value=(act-perdre).toFixed(1);
+  }
+}
+function calcObjPerdre(){
+  const act=parseFloat(document.getElementById('obj-act').value);
+  const cible=parseFloat(document.getElementById('obj-cible').value);
+  if(act>0&&cible>0&&act>cible){
+    document.getElementById('obj-perdre').value=(act-cible).toFixed(1);
+  }
+}
+function saveObj(){
+  const cible=parseFloat(document.getElementById('obj-cible').value);
+  const date=document.getElementById('obj-date').value;
+  if(!cible||cible<=0){alert('Renseignez votre poids cible (ou poids actuel + kg à perdre).');return}
+  if(!date){alert('Renseignez une date cible.');return}
+  sO('objectif',{actuel:parseFloat(document.getElementById('obj-act').value)||null,cible,date,intention:document.getElementById('obj-int').value,createdAt:today()});
+  refreshAll();
+  alert('Objectif enregistré !');
+}
+
+// ════════════════ HYDRATION ════════════════
+function addDrink(vol,type){
+  const coef=DRINK_COEF[type]??1;
+  const net=round2(vol*coef);
+  const t=today();
+  const arr=gD('hydra');
+  const idx=arr.findIndex(x=>x.date===t);
+  if(idx>=0){
+    arr[idx].net=round2((arr[idx].net||0)+net);
+    arr[idx].log=arr[idx].log||[];
+    arr[idx].log.push({vol,type,net});
+  } else {
+    arr.push({date:t,net,log:[{vol,type,net}]});
+  }
+  sD('hydra',arr);
+  refreshAll();
+}
+
+function addCustomDrink(){
+  const vol=parseFloat(document.getElementById('h-custom').value);
+  const type=document.getElementById('h-type').value;
+  if(!vol||vol<=0) return;
+  addDrink(vol,type);
+  document.getElementById('h-custom').value='';
+}
+
+function resetWater(){
+  const t=today(); const arr=gD('hydra');
+  const idx=arr.findIndex(x=>x.date===t);
+  if(idx>=0){arr[idx].net=0;arr[idx].log=[];sD('hydra',arr);refreshAll();}
+}
+
+// ════════════════ RATINGS ════════════════
+function setSlpQ(n){slpQ=n;document.querySelectorAll('.star').forEach((s,i)=>s.textContent=i<n?'★':'☆')}
+function setHum(n){humVal=n;document.querySelectorAll('#hu-btns .rb').forEach((b,i)=>b.classList.toggle('active',i+1===n))}
+function setEn(n){enVal=n;document.querySelectorAll('#en-btns .rb').forEach((b,i)=>b.classList.toggle('active',i+1===n))}
+function setMeal(t){mealType=t;document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+t+"'")))}
+
+// ════════════════ SLEEP ════════════════
+function calcSlpDur(){
+  const c=document.getElementById('sl-cou').value,l=document.getElementById('sl-lev').value;
+  if(!c||!l) return null;
+  const [ch,cm]=c.split(':').map(Number),[lh,lm]=l.split(':').map(Number);
+  let mins=(lh*60+lm)-(ch*60+cm);
+  if(mins<0) mins+=1440;
+  return (mins/60).toFixed(1);
+}
+function calcSlp(){const d=calcSlpDur();document.getElementById('sl-calc').textContent=d?d+'h':'—'}
+
+// ════════════════ IMC / RTH ════════════════
+function calcIMC(p,t){return t?+(p/((t/100)**2)).toFixed(1):null}
+function imcCat(imc){
+  if(!imc) return{label:'—',color:''};
+  if(imc<16.5) return{label:'Maigreur sévère',color:'#53c0f0'};
+  if(imc<18.5) return{label:'Maigreur',color:'#7DCFE8'};
+  if(imc<25)   return{label:'Poids normal ✓',color:'#4fbe6c'};
+  if(imc<30)   return{label:'Surpoids',color:'#f5c84c'};
+  if(imc<35)   return{label:'Obésité modérée',color:'#f08c4b'};
+  return{label:'Obésité sévère',color:'#e45f5f'};
+}
+
+// RTH ratio taille/hanche
+function calcRTH(taille,hanche){return hanche?+(taille/hanche).toFixed(2):null}
+function rthStatus(rth){
+  if(!rth) return null;
+  const ok=profile==='f'?rth<0.85:rth<0.90;
+  const optimal=profile==='f'?'<0.85':'<0.90';
+  return{rth,ok,label:ok?'Bon ratio ✓':'Attention — risque métabolique',optimal};
+}
+
+// ════════════════ HYDRO GOAL ════════════════
+function hydraGoal(){
+  const pr=gO('profil');
+  let g=profile==='f'?2.0:2.5;
+  if(pr.peau==='severe') g+=0.3;
+  else if(pr.peau==='moderate') g+=0.15;
+  return g;
+}
+
+// ════════════════ ENCOURAGEMENT ════════════════
+function getEnc(){
+  const pArr=gD('poids'),sArr=gD('sport'),slArr=gD('sommeil'),hArr=gD('hydra'),pr=gO('profil');
+  const msgs=[];
+  if(pArr.length>=2){
+    const diff=pArr[pArr.length-1].poids-pArr[pArr.length-2].poids;
+    if(diff<0) msgs.push({t:`Bravo ! −${Math.abs(diff).toFixed(1)} kg`,s:'Continue comme ça, chaque gramme compte !',type:'good'});
+    else if(diff===0) msgs.push({t:'Poids stable',s:'La régularité, c\'est déjà une victoire.',type:'info'});
+    else msgs.push({t:`+${diff.toFixed(1)} kg vs dernière mesure`,s:'Variation normale. Reste sur la durée.',type:'warn'});
+  }
+  const n7=new Date(); n7.setDate(n7.getDate()-7);
+  const sw=sArr.filter(s=>new Date(s.date)>=n7).length;
+  if(sw>=4) msgs.push({t:`${sw} séances cette semaine 🏆`,s:'Excellent rythme, tu es en feu !',type:'good'});
+  else if(sw===0) msgs.push({t:'Pas encore de sport cette semaine',s:'Même 20 min de marche fait la différence.',type:'warn'});
+  const g=hydraGoal();
+  const tod=today();
+  const todH=hArr.find(x=>x.date===tod);
+  if(todH&&todH.net>=g) msgs.push({t:'Objectif hydratation atteint aujourd\'hui ! 💧',s:'Ton corps te remercie — ta peau aussi.',type:'good'});
+  if(pr.peau&&pr.peau!=='') msgs.push({t:'Peau sèche : l\'hydratation est ta priorité',s:'Bois régulièrement tout au long de la journée, pas d\'un coup.',type:'tip'});
+  if(slArr.length){const avg=slArr.slice(-7).reduce((a,b)=>a+b.duree,0)/Math.min(7,slArr.slice(-7).length);
+    if(avg<6.5) msgs.push({t:`Sommeil insuffisant (${avg.toFixed(1)}h en moy.)`,s:'Le manque de sommeil freine la perte de poids et aggrave la peau sèche.',type:'warn'});
+  }
+  const fallback=[{t:'Chaque jour compte',s:'La régularité bat toujours l\'intensité.',type:'info'},{t:'Tu es sur la bonne voie',s:'Commence à saisir tes données pour voir tes progrès !',type:'info'}];
+  return msgs.length?msgs[Math.floor(Math.random()*msgs.length)]:fallback[0];
+}
+
+function calcStreak(){
+  const sArr=gD('sport'); if(!sArr.length) return 0;
+  let streak=0; const t=new Date();
+  for(let i=0;i<30;i++){const d=new Date(t);d.setDate(t.getDate()-i);const ds=d.toISOString().slice(0,10);if(sArr.some(s=>s.date===ds))streak++;else if(i>0)break;}
+  return streak;
+}
+
+// ════════════════ CHARTS ════════════════
+const pColor=()=>profile==='f'?'#D4537E':'#378ADD';
+const baseOpts=(extraY={})=>({
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:12},grid:{color:'rgba(128,128,128,.08)'}},y:{ticks:{font:{size:10}},grid:{color:'rgba(128,128,128,.08)'},...extraY}}
+});
+
+function mk(id,cfg){
+  if(charts[id]){charts[id].destroy();delete charts[id]}
+  const el=document.getElementById(id); if(!el) return;
+  charts[id]=new Chart(el,cfg);
+}
+
+function refreshCharts(){
+  const pArr=gD('poids'),mArr=gD('mensus'),sArr=gD('sport'),slArr=gD('sommeil'),hArr=gD('hydra'),huArr=gD('humeur'),alArr=gD('alim');
+  const c=pColor();
+
+  // Poids
+  if(pArr.length){
+    const ds=[{label:'Poids',data:pArr.map(x=>x.poids),borderColor:c,backgroundColor:c+'22',tension:.35,fill:true,pointRadius:4,pointBackgroundColor:c}];
+    const obj=gO('objectif');
+    if(obj.cible&&pArr.length>=2){
+      ds.push({label:'Objectif',data:pArr.map(()=>obj.cible),borderColor:'#1D9E75',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false});
+    }
+    const cfg={type:'line',data:{labels:pArr.map(x=>fd(x.date)),datasets:ds},options:{...baseOpts(),plugins:{legend:{display:obj.cible?true:false,position:'top',labels:{boxWidth:10,font:{size:11}}}}}};
+    mk('c-poids',cfg);
+    mk('c-bilan-p',{...cfg});
+  }
+
+  // Mensurations
+  if(mArr.length){
+    const labels=profile==='f'?MENS_LABELS_F:MENS_LABELS_M;
+    const activeKeys=MENS_KEYS.filter(k=>mensActive.includes(k)&&mArr.some(x=>x[k]));
+    const ds=activeKeys.map(k=>({label:labels[k],data:mArr.map(x=>x[k]||null),borderColor:MENS_COLORS[k],backgroundColor:MENS_COLORS[k]+'18',tension:.35,fill:false,pointRadius:3,spanGaps:true}));
+    mk('c-mensus',{type:'line',data:{labels:mArr.map(x=>fd(x.date)),datasets:ds},options:{...baseOpts(),plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11}}}}}});
+    renderMensusFilter(mArr);
+    renderMensusCompare(mArr);
+  }
+
+  // Sport
+  if(sArr.length){
+    const weeks={};
+    for(let i=3;i>=0;i--){const d=new Date();d.setDate(d.getDate()-d.getDay()-7*i);weeks[d.toISOString().slice(0,10)]={cardio:0,muscu:0,rando:0,course:0}}
+    sArr.forEach(s=>{const sd=new Date(s.date);sd.setDate(sd.getDate()-sd.getDay());const wk=sd.toISOString().slice(0,10);if(weeks[wk])weeks[wk][s.type]=(weeks[wk][s.type]||0)+1});
+    const wks=Object.keys(weeks).sort();
+    mk('c-sport-w',{type:'bar',data:{labels:wks.map(w=>'S.'+fd(w)),datasets:[
+      {label:'Cardio',data:wks.map(w=>weeks[w].cardio),backgroundColor:'#1D9E75'},
+      {label:'Muscu',data:wks.map(w=>weeks[w].muscu),backgroundColor:'#378ADD'},
+      {label:'Rando',data:wks.map(w=>weeks[w].rando||0),backgroundColor:'#BA7517'},
+      {label:'Course',data:wks.map(w=>weeks[w].course||0),backgroundColor:'#D85A30'}
+    ]},options:{...baseOpts(),plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11}}}},scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{font:{size:10}}}}}});
+    const types={cardio:0,muscu:0,rando:0,course:0};
+    sArr.forEach(s=>{types[s.type]=(types[s.type]||0)+1});
+    const pieLabs=[],pieData=[],pieColors=[];
+    const typeMap={cardio:['Cardio','#1D9E75'],muscu:['Muscu','#378ADD'],rando:['Rando','#BA7517'],course:['Course','#D85A30']};
+    Object.entries(types).forEach(([k,v])=>{if(v>0){pieLabs.push(typeMap[k][0]);pieData.push(v);pieColors.push(typeMap[k][1])}});
+    mk('c-sport-pie',{type:'doughnut',data:{labels:pieLabs,datasets:[{data:pieData,backgroundColor:pieColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11}}}}}});
+  }
+
+  // Sommeil
+  if(slArr.length){
+    const l30=slArr.slice(-30);
+    mk('c-slp',{type:'bar',data:{labels:l30.map(x=>fd(x.date)),datasets:[{label:'h',data:l30.map(x=>x.duree),backgroundColor:l30.map(x=>x.duree>=7.5?'#1D9E75':x.duree>=6?'#f5c84c':'#e45f5f'),borderRadius:3}]},options:baseOpts({min:0,max:12,ticks:{font:{size:10},callback:v=>v+'h'}})});
+    const avg=slArr.reduce((a,b)=>a+b.duree,0)/slArr.length;
+    const best=Math.max(...slArr.map(x=>x.duree));
+    const worst=Math.min(...slArr.map(x=>x.duree));
+    document.getElementById('slp-stats').innerHTML=`
+      <div class="mc"><div class="ml">Moyenne</div><div class="mv">${avg.toFixed(1)}h</div></div>
+      <div class="mc"><div class="ml">Meilleure nuit</div><div class="mv">${best.toFixed(1)}h</div></div>
+      <div class="mc"><div class="ml">Plus courte nuit</div><div class="mv">${worst.toFixed(1)}h</div></div>
+      <div class="mc"><div class="ml">Nuits enregistrées</div><div class="mv">${slArr.length}</div></div>`;
+  }
+
+  // Hydra
+  const goal=hydraGoal();
+  const hToday=hArr.find(x=>x.date===today());
+  const net=hToday?hToday.net:0;
+  const pct=Math.min(100,(net/goal)*100);
+  document.getElementById('h-today').textContent=(net<0?'':'')+net.toFixed(2)+' L';
+  document.getElementById('h-goal-txt').textContent=goal.toFixed(1)+' L';
+  document.getElementById('h-goal-max').textContent=goal.toFixed(1)+' L';
+  const prog=document.getElementById('h-prog');
+  prog.style.width=Math.max(0,pct).toFixed(0)+'%';
+  prog.style.background=net<0?'#e45f5f':pct>=100?'#1D9E75':'#378ADD';
+  // drops
+  const drops=document.getElementById('h-drops');
+  const steps=Math.ceil(goal/0.25); const filled=Math.floor(Math.max(0,net)/0.25);
+  drops.innerHTML='';
+  for(let i=0;i<steps;i++){const d=document.createElement('div');d.className='hdrop'+(i<filled?' on':'');d.textContent=i<filled?'💧':'';drops.appendChild(d)}
+  // breakdown
+  const bd=document.getElementById('h-breakdown');
+  if(hToday&&hToday.log&&hToday.log.length){
+    bd.innerHTML=`<div style="font-size:12px;color:var(--text2)"><strong>Détail du jour :</strong> `+
+      hToday.log.map(l=>`${DRINK_LABEL[l.type]||l.type} ${l.vol>0?(l.vol*1000).toFixed(0)+'ml':''}  → ${l.net>=0?'+':''}${l.net.toFixed(2)}L net`).join(' &nbsp;·&nbsp; ')+'</div>';
+  } else { bd.innerHTML=''; }
+
+  if(hArr.length){
+    const l14=hArr.slice(-14);
+    mk('c-hydra',{type:'bar',data:{labels:l14.map(x=>fd(x.date)),datasets:[{label:'L net',data:l14.map(x=>x.net||0),backgroundColor:l14.map(x=>(x.net||0)>=goal?'#1D9E75':(x.net||0)<0?'#e45f5f':'#85B7EB'),borderRadius:3}]},options:baseOpts({ticks:{font:{size:10},callback:v=>v.toFixed(1)+'L'}})});
+  }
+
+  // Peau sèche skin tip on hydra page
+  const pr=gO('profil');
+  const skinEl=document.getElementById('skin-hydro-tip');
+  if(skinEl&&profile==='f'&&pr.peau&&pr.peau!==''){
+    const tips={mild:'💡 Peau légèrement sèche : vise '+goal.toFixed(1)+'L/jour et ajoute des corps gras (avocat, huile d\'olive) à ton alimentation.',moderate:'🧴 Peau sèche modérée : l\'hydratation interne compte autant que les crèmes. Bois régulièrement, dors bien, et surveille ton oméga-3.',severe:'⚠️ Peau sèche chronique : ton objectif est '+goal.toFixed(1)+'L/jour. Évite le café >3 tasses et l\'alcool qui déshydratent. Le sommeil insuffisant aggrave aussi la sécheresse cutanée.'};
+    skinEl.innerHTML=`<div class="skin-tip">${tips[pr.peau]||''}</div>`;
+  } else if(skinEl){ skinEl.innerHTML=''; }
+
+  // Humeur / Énergie
+  if(huArr.length){
+    const l14h=huArr.slice(-14);
+    const hColors=['','#e45f5f','#f08c4b','#f5c84c','#4fbe6c','#1D9E75'];
+    mk('c-hum',{type:'line',data:{labels:l14h.map(x=>fd(x.date)),datasets:[{label:'Humeur',data:l14h.map(x=>x.humeur),borderColor:'#7F77DD',backgroundColor:'#7F77DD1a',tension:.35,fill:true,pointRadius:5,pointBackgroundColor:l14h.map(x=>hColors[x.humeur])}]},options:baseOpts({min:.5,max:5.5,ticks:{stepSize:1,font:{size:10},callback:v=>['','😔','😕','😐','😊','😄'][v]||''}})});
+    mk('c-en',{type:'line',data:{labels:l14h.map(x=>fd(x.date)),datasets:[{label:'Énergie',data:l14h.map(x=>x.energie),borderColor:'#BA7517',backgroundColor:'#BA751720',tension:.35,fill:true,pointRadius:5,pointBackgroundColor:l14h.map(x=>hColors[x.energie])}]},options:baseOpts({min:.5,max:5.5,ticks:{stepSize:1,font:{size:10},callback:v=>['','🪫','😴','⚡','🔋','🚀'][v]||''}})});
+  }
+
+  // GLP-1
+  renderGlp1Chart();
+
+  // Calories
+  if(alArr.length){
+    const days={}; alArr.forEach(a=>{if(!days[a.date])days[a.date]=0;days[a.date]+=a.calories});
+    const l7=Object.entries(days).sort((a,b)=>a[0].localeCompare(b[0])).slice(-7);
+    mk('c-cal',{type:'bar',data:{labels:l7.map(x=>fd(x[0])),datasets:[{label:'kcal',data:l7.map(x=>x[1]),backgroundColor:pColor()+'99',borderRadius:3}]},options:baseOpts()});
+    renderRepasToday(alArr);
+  }
+}
+
+// ════════════════ RENDER HELPERS ════════════════
+function renderMensusFilter(mArr){
+  const el=document.getElementById('mensus-filt'); if(!el) return;
+  const labels=profile==='f'?MENS_LABELS_F:MENS_LABELS_M;
+  el.innerHTML=MENS_KEYS.filter(k=>mArr.some(x=>x[k])).map(k=>
+    `<button onclick="toggleMensus('${k}')" style="padding:3px 9px;border-radius:20px;border:1.5px solid ${mensActive.includes(k)?MENS_COLORS[k]:'var(--border2)'};background:${mensActive.includes(k)?MENS_COLORS[k]+'22':'transparent'};color:${mensActive.includes(k)?MENS_COLORS[k]:'var(--text3)'};font-size:12px;cursor:pointer">${labels[k]}</button>`
+  ).join('');
+}
+
+function toggleMensus(k){const i=mensActive.indexOf(k);if(i>=0)mensActive.splice(i,1);else mensActive.push(k);refreshCharts()}
+
+function renderMensusCompare(mArr){
+  const el=document.getElementById('mensus-cmp'); if(!el) return;
+  if(mArr.length<2){el.innerHTML='<p style="color:var(--text3);font-size:13px">Ajoutez au moins 2 séries de mesures.</p>';return}
+  const first=mArr[0],last=mArr[mArr.length-1];
+  const labels=profile==='f'?MENS_LABELS_F:MENS_LABELS_M;
+  const taille=last.taille,hanche=last.hanche;
+  const rth=calcRTH(taille,hanche);
+  const rthS=rthStatus(rth);
+  el.innerHTML=`<div class="g3">${MENS_KEYS.filter(k=>first[k]&&last[k]).map(k=>{
+    const diff=(last[k]-first[k]).toFixed(1);
+    const goodKey=['taille','hanche','cuisse'].includes(k);
+    const diffColor=diff<0?(goodKey?'var(--green)':'var(--coral)'):(goodKey?'var(--coral)':'var(--green)');
+    return`<div class="mc"><div class="ml">${labels[k]}</div><div class="mv">${last[k]} cm</div><div class="md" style="color:${diffColor}">${diff>0?'+':''}${diff} cm</div></div>`;
+  }).join('')}</div>
+  ${rthS?`<div style="margin-top:8px;font-size:13px">Ratio taille/hanche : <strong>${rthS.rth}</strong>
+    <span class="rth-badge" style="background:${rthS.ok?'var(--green-l)':'var(--coral-l)'};color:${rthS.ok?'var(--green-d)':'var(--coral-d)'}">
+      ${rthS.label} (optimal ${rthS.optimal})
+    </span>
+    <span style="font-size:11px;color:var(--text3);margin-left:6px">Indicateur de risque cardiométabolique</span>
+  </div>`:''}`;
+}
+
+function renderRepasToday(alArr){
+  const el=document.getElementById('repas-today'); if(!el) return;
+  const t=today(); const tm=alArr.filter(x=>x.date===t);
+  if(!tm.length){el.innerHTML='<p style="color:var(--text3);font-size:13px;padding:.75rem 0">Aucun repas aujourd\'hui</p>';return}
+  const tCal=tm.reduce((a,b)=>a+b.calories,0),tProt=tm.reduce((a,b)=>a+b.proteines,0);
+  const icons={'petit-dej':'☀️','dejeuner':'🌞','diner':'🌙','collation':'🍎'};
+  el.innerHTML=`<div class="g2" style="margin-bottom:7px">
+    <div class="mc"><div class="ml">Calories aujourd'hui</div><div class="mv">${tCal} kcal</div></div>
+    <div class="mc"><div class="ml">Protéines</div><div class="mv">${tProt} g</div></div>
+  </div>
+  <div class="ll">${tm.map(m=>`<div class="le"><span style="font-size:14px">${icons[m.type]||'🍽️'}</span><span class="lm">${m.desc.substring(0,55)}${m.desc.length>55?'…':''}</span>${m.calories?`<span class="lme">${m.calories} kcal</span>`:''}</div>`).join('')}</div>`;
+}
+
+function renderLogs(){
+  // Poids
+  const pEl=document.getElementById('log-poids');
+  const pArr=gD('poids');
+  if(pEl){
+    if(!pArr.length){pEl.innerHTML='<p style="color:var(--text3);font-size:13px">Aucune entrée</p>';}
+    else pEl.innerHTML=`<div class="ll">${[...pArr].reverse().slice(0,20).map((x,i,a)=>{
+      const prev=a[i+1];
+      const diff=prev?`<span style="color:${x.poids<prev.poids?'var(--green)':'var(--coral)'};font-size:12px">${x.poids<prev.poids?'▼':'▲'} ${Math.abs(x.poids-prev.poids).toFixed(1)}kg</span>`:'';
+      const imc=x.taille?`<span style="font-size:11px;color:var(--text3)">IMC ${calcIMC(x.poids,x.taille)}</span>`:'';
+      return`<div class="le"><span class="ld">${fd(x.date)}</span><span class="lm">${x.poids} kg</span>${diff}${imc}<button class="ldel" onclick="delItem('poids','${x.date}')">✕</button></div>`;
+    }).join('')}</div>`;
+  }
+
+  // Sport
+  const sEl=document.getElementById('log-sport');
+  const sArr=gD('sport');
+  const badgeMap={cardio:'b-cardio',muscu:'b-muscu',rando:'b-rando',course:'b-course'};
+  const intIc=['','😌','😅','🔥','💀'];
+  if(sEl){
+    if(!sArr.length){sEl.innerHTML='<p style="color:var(--text3);font-size:13px">Aucune séance</p>';}
+    else sEl.innerHTML=`<div class="ll">${[...sArr].reverse().slice(0,20).map(x=>`
+      <div class="le">
+        <span class="ld">${fd(x.date)}</span>
+        <span class="lbadge ${badgeMap[x.type]||'b-cardio'}">${SPORT_TYPE_LABEL[x.type]||x.type}</span>
+        <span class="lm">${x.activite}</span>
+        <span class="lme">${x.duree?x.duree+'min ':''} ${x.distance?x.distance+'km ':''} ${x.denivele?'+'+x.denivele+'m ':''} ${intIc[x.intensite]||''}</span>
+        ${x.difficulte?`<span style="font-size:11px;color:var(--text3)">${{facile:'🟢',moyen:'🟡',difficile:'🔴',vosges:'⛰️'}[x.difficulte]||''}</span>`:''}
+        <button class="ldel" onclick="delSport('${x.date}','${x.activite}')">✕</button>
+      </div>`).join('')}</div>`;
+  }
+
+  // Alim
+  const aEl=document.getElementById('log-alim');
+  const alArr=gD('alim');
+  const mealIc={'petit-dej':'☀️','dejeuner':'🌞','diner':'🌙','collation':'🍎'};
+  if(aEl){
+    if(!alArr.length){aEl.innerHTML='<p style="color:var(--text3);font-size:13px">Aucun repas</p>';}
+    else aEl.innerHTML=`<div class="ll">${[...alArr].reverse().slice(0,20).map(x=>`
+      <div class="le">
+        <span class="ld">${fd(x.date)}</span>
+        <span style="font-size:14px">${mealIc[x.type]||'🍽️'}</span>
+        <span class="lm">${x.desc.substring(0,55)}${x.desc.length>55?'…':''}</span>
+        ${x.calories?`<span class="lme">${x.calories} kcal</span>`:''}
+        ${x.ressenti?`<span style="font-size:11px;color:var(--text3)">${x.ressenti}</span>`:''}
+      </div>`).join('')}</div>`;
+  }
+
+  // Humeur
+  const huEl=document.getElementById('log-hum');
+  const huArr=gD('humeur');
+  const huEm=['','😔','😕','😐','😊','😄'],enEm=['','🪫','😴','⚡','🔋','🚀'];
+  if(huEl){
+    if(!huArr.length){huEl.innerHTML='<p style="color:var(--text3);font-size:13px">Aucune entrée</p>';}
+    else huEl.innerHTML=`<div class="ll">${[...huArr].reverse().slice(0,15).map(x=>`
+      <div class="le">
+        <span class="ld">${fd(x.date)}</span>
+        <span style="font-size:16px">${huEm[x.humeur]}</span>
+        <span class="lm">${x.notes?x.notes.substring(0,60)+(x.notes.length>60?'…':''):'—'}</span>
+        <span style="font-size:16px">${enEm[x.energie]}</span>
+      </div>`).join('')}</div>`;
+  }
+}
+
+function delItem(type,date){sD(type,gD(type).filter(x=>x.date!==date));refreshAll()}
+function delSport(date,act){const arr=gD('sport');const i=arr.findIndex(x=>x.date===date&&x.activite===act);if(i>=0)arr.splice(i,1);sD('sport',arr);refreshAll()}
+
+function renderBilan(){
+  const pArr=gD('poids'),sArr=gD('sport'),slArr=gD('sommeil'),hArr=gD('hydra'),pr=gO('profil'),obj=gO('objectif');
+  const t=today();
+  const enc=getEnc();
+  document.getElementById('enc-msg').innerHTML=`<div class="enc">${{'good':'🎉','warn':'⚠️','info':'💡','tip':'💭'}[enc.type]||'💬'} <strong>${enc.t}</strong> — ${enc.s}</div>`;
+  const streak=calcStreak();
+  document.getElementById('streak-area').innerHTML=streak>=2?`<div class="streak">🔥 Série de ${streak} jours de sport consécutifs !</div>`:'';
+  // Metrics
+  const last=pArr.length?pArr[pArr.length-1]:null;
+  const imc=last?calcIMC(last.poids,last.taille):null;
+  const imcI=imc?imcCat(imc):null;
+  const goal=hydraGoal();
+  const todH=hArr.find(x=>x.date===t);
+  const n7=new Date();n7.setDate(n7.getDate()-7);
+  const sw=sArr.filter(s=>new Date(s.date)>=n7).length;
+  const slAvg=slArr.length?(slArr.slice(-7).reduce((a,b)=>a+b.duree,0)/Math.min(7,slArr.slice(-7).length)).toFixed(1):null;
+  const pDiff=pArr.length>1?((last.poids-pArr[0].poids).toFixed(1)):null;
+  document.getElementById('bilan-metrics').innerHTML=[
+    {l:'Poids',v:last?last.poids+' kg':'—',s:pDiff?((pDiff<0?'▼ ':'▲ ')+Math.abs(pDiff)+' kg depuis le début'):'',c:pDiff<0?'var(--green)':'var(--coral)'},
+    {l:'IMC',v:imc||'—',s:imcI?imcI.label:'',c:imcI?imcI.color:''},
+    {l:'Hydratation auj.',v:todH?(todH.net>=0?todH.net.toFixed(1)+' L':'⚠️ '+todH.net.toFixed(1)+'L'):'0 L',s:'Objectif '+goal.toFixed(1)+'L',c:todH&&todH.net>=goal?'var(--green)':todH&&todH.net<0?'var(--coral)':''},
+    {l:'Sport 7 jours',v:sw,s:'séances',c:sw>=4?'var(--green)':sw===0?'var(--coral)':''},
+    {l:'Sommeil moy.',v:slAvg?slAvg+'h':'—',s:'7 derniers jours',c:slAvg>=7.5?'var(--green)':slAvg<6?'var(--coral)':''},
+  ].map(m=>`<div class="mc"><div class="ml">${m.l}</div><div class="mv" style="${m.c?'color:'+m.c:''}">${m.v}</div><div class="ms">${m.s||''}</div></div>`).join('');
+
+  // Obj bilan
+  const objEl=document.getElementById('bilan-obj');
+  if(obj.cible&&last){
+    const total=Math.abs((obj.actuel||last.poids)-obj.cible);
+    const done=Math.abs(last.poids-(obj.actuel||last.poids));
+    const rem=Math.max(0,last.poids-obj.cible);
+    const pct=total>0?Math.min(100,(done/total)*100):0;
+    const dLeft=obj.date?Math.ceil((new Date(obj.date)-new Date())/86400000):null;
+    objEl.innerHTML=`<div style="margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+        <span>Actuel : <strong>${last.poids} kg</strong></span><span style="color:var(--green);font-weight:600">Cible : ${obj.cible} kg 🎯</span>
+      </div>
+      <div class="pb-wrap"><div class="pb-fill" style="width:${pct.toFixed(0)}%;background:var(--green)"></div></div>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px">${pct.toFixed(0)}% atteint — encore <strong>${rem.toFixed(1)} kg</strong> à perdre sur ${total.toFixed(1)} kg</div>
+    </div>
+    ${dLeft!==null?`<div style="font-size:12px;color:var(--text3)">${dLeft>0?`⏳ ${dLeft} jours`:'⚠️ Date dépassée'}</div>`:''}
+    ${obj.intention?`<div style="margin-top:9px;font-size:12px;color:var(--text2);font-style:italic;border-left:2px solid var(--purple);padding-left:7px">"${obj.intention}"</div>`:''}`;
+  } else {
+    objEl.innerHTML=`<div class="empty">Définissez votre objectif 🎯</div>`;
+  }
+
+  // Semaine
+  const semEl=document.getElementById('bilan-sem');
+  const sevenD=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toISOString().slice(0,10)});
+  const sportD=new Set(sArr.map(s=>s.date));
+  semEl.innerHTML=`<div style="display:flex;gap:7px;flex-wrap:wrap">${sevenD.map(d=>{
+    const hS=sportD.has(d),hSl=gD('sommeil').some(s=>s.date===d),hF=gD('alim').some(a=>a.date===d),isT=d===t;
+    return`<div style="text-align:center;flex:1;min-width:55px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'][(new Date(d).getDay()+6)%7]}</div>
+      <div style="width:34px;height:34px;border-radius:50%;background:${isT?'var(--purple)':'var(--bg3)'};border:2px solid ${isT?'var(--purple-d)':'var(--border)'};display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:12px;font-weight:500;color:${isT?'#fff':'var(--text2)'}">${d.slice(8)}</div>
+      <div style="font-size:13px;margin-top:3px">${hS?'🏃':''}${hSl?'🌙':''}${hF?'🍽️':''}</div>
+    </div>`;
+  }).join('')}</div>`;
+
+  // Skin advice
+  const skinEl=document.getElementById('skin-advice');
+  if(skinEl&&profile==='f'&&pr.peau&&pr.peau!==''){
+    const slAvgN=slArr.length?slArr.slice(-7).reduce((a,b)=>a+b.duree,0)/Math.min(7,slArr.slice(-7).length):null;
+    const hydOk=todH&&todH.net>=goal;
+    let tips=[];
+    if(!hydOk) tips.push('💧 Hydratation insuffisante aujourd\'hui');
+    if(slAvgN&&slAvgN<7) tips.push('🌙 Sommeil court — aggrave la sécheresse cutanée');
+    if(tips.length) skinEl.innerHTML=`<div class="banner warn"><span class="ban-ic">🧴</span><div class="ban-t"><div class="ban-h">Peau sèche — points d'attention</div><div class="ban-s">${tips.join(' &nbsp;·&nbsp; ')}</div></div></div>`;
+    else skinEl.innerHTML=`<div class="banner good"><span class="ban-ic">🧴</span><div class="ban-t"><div class="ban-h">Peau sèche — bonne journée !</div><div class="ban-s">Hydratation et sommeil au vert. Continue !</div></div></div>`;
+  } else if(skinEl){ skinEl.innerHTML=''; }
+
+  renderObjPage(obj,pArr);
+  renderProfilDisplay();
+}
+
+function renderObjPage(obj,pArr){
+  const el=document.getElementById('obj-display'); if(!el||!obj.cible) return;
+  const last=pArr.length?pArr[pArr.length-1]:null; if(!last) return;
+  const total=Math.abs((obj.actuel||last.poids)-obj.cible);
+  const done=total-Math.max(0,last.poids-obj.cible);
+  const pct=total>0?Math.min(100,(done/total)*100):0;
+  const dLeft=obj.date?Math.ceil((new Date(obj.date)-new Date())/86400000):null;
+  el.innerHTML=`<div class="banner ${pct>=100?'good':pct>50?'info':'warn'}">
+    <span class="ban-ic">${pct>=100?'🏆':pct>50?'💪':'🎯'}</span>
+    <div class="ban-t">
+      <div class="ban-h">Objectif : atteindre ${obj.cible} kg (−${total.toFixed(1)} kg) ${obj.date?'d\'ici le '+new Date(obj.date).toLocaleDateString('fr-FR'):''}</div>
+      <div class="ban-s">${pct.toFixed(0)}% atteint · encore ${Math.max(0,last.poids-obj.cible).toFixed(1)} kg à perdre${dLeft!==null?` · ${dLeft>0?dLeft+' jours restants':'Délai dépassé'}`:''}</div>
+    </div>
+  </div>
+  ${obj.intention?`<div class="enc">💭 "${obj.intention}"</div>`:''}`;
+}
+
+// ════════════════ IMC DISPLAY ════════════════
+function renderIMC(){
+  const pArr=gD('poids'); if(!pArr.length) return;
+  const last=pArr[pArr.length-1];
+  const pr=gO('profil');
+  const taille=last.taille||pr.taille;
+  const imc=calcIMC(last.poids,taille);
+  document.getElementById('imc-val').textContent=imc||'—';
+  if(imc){
+    const cat=imcCat(imc);
+    const catEl=document.getElementById('imc-cat');
+    catEl.textContent=cat.label; catEl.style.color=cat.color;
+    const pct=Math.min(100,Math.max(0,((imc-16)/(40-16))*100));
+    document.getElementById('imc-ndl').style.left=pct.toFixed(1)+'%';
+  }
+  // RTH display
+  const mArr=gD('mensus');
+  const rthEl=document.getElementById('rth-display');
+  if(mArr.length&&rthEl){
+    const last=mArr[mArr.length-1];
+    const rths=rthStatus(calcRTH(last.taille,last.hanche));
+    if(rths) rthEl.innerHTML=`<div style="font-size:13px;color:var(--text2)">Ratio taille/hanche : <strong>${rths.rth}</strong>
+      <span class="rth-badge" style="background:${rths.ok?'var(--green-l)':'var(--coral-l)'};color:${rths.ok?'var(--green-d)':'var(--coral-d)'}">${rths.label}</span>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">Optimal ${rths.optimal} — indicateur de risque cardiométabolique</div></div>`;
+  }
+}
+
+// ════════════════ EXPORT / IMPORT ════════════════
+function exportData(){
+  const types=['poids','mensus','sport','alim','sommeil','hydra','humeur','objectif','profil','pauses','glp1_scores'];
+  const data={};
+  ['f','m'].forEach(p=>{data[p]={};types.forEach(t=>{data[p][t]=JSON.parse(localStorage.getItem(`sh_${p}_${t}`)||'{}')})});
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`suivi-sante-${today()}.json`;a.click();
+}
+function importData(){document.getElementById('imp-file').click()}
+function doImport(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      ['f','m'].forEach(p=>{if(d[p])Object.entries(d[p]).forEach(([t,v])=>localStorage.setItem(`sh_${p}_${t}`,JSON.stringify(v)))});
+      alert('Données importées !'); refreshAll();
+    }catch{alert('Fichier invalide.')}
+  };
+  r.readAsText(f);
+}
+
+
+// ════════════════ PAUSE ACTIVE ════════════════
+const EXERCISES = {
+  bureau: [
+    {id:'squat',name:'Squats',reps:'15 répétitions',desc:"Pieds écartés, dos droit, descends comme pour t'asseoir",muscles:'Fessiers, cuisses',svg:'squat'},
+    {id:'fente',name:'Fentes alternées',reps:'10 de chaque côté',desc:'Grand pas en avant, genou arrière vers le sol, garde le buste droit',muscles:'Cuisses, fessiers, équilibre',svg:'lunge'},
+    {id:'mollet',name:'Montées sur pointes',reps:'20 répétitions',desc:'Debout, monte sur la pointe des pieds lentement, redescend',muscles:'Mollets',svg:'calf'},
+    {id:'bras_bureau',name:'Pompes sur bureau',reps:'10–15 répétitions',desc:'Mains sur le bureau, corps incliné, fléchis les coudes',muscles:'Pectoraux, triceps, épaules',svg:'pushup_desk'},
+  ],
+  cardio: [
+    {id:'jumping',name:'Jumping jacks',reps:'30 secondes',desc:'Saute en écartant bras et jambes simultanément',muscles:'Corps entier, cardio',svg:'jumping'},
+    {id:'marche',name:'Marche sur place genoux hauts',reps:'45 secondes',desc:'Marche en levant les genoux à hauteur de hanche',muscles:'Cardio, abdos, cuisses',svg:'march'},
+    {id:'shadow',name:'Shadow boxing',reps:'30 secondes',desc:'Enchaîne des jabs et crochets dans le vide, pieds actifs',muscles:'Épaules, cardio, coordination',svg:'boxing'},
+  ],
+  force: [
+    {id:'planche',name:'Planche (transverse)',reps:'30 à 60 secondes',desc:'Sur les avant-bras et orteils, corps aligné. NE PAS creuser les lombaires — expire en contractant le ventre profond. Safe post-grossesse.',muscles:'Transverse, dos profond',svg:'plank'},
+    {id:'superman',name:'Superman',reps:'12 répétitions',desc:'À 4 pattes, étire un bras et la jambe opposée simultanément',muscles:'Dos, fessiers, équilibre',svg:'superman'},
+    {id:'triceps',name:'Dips sur chaise',reps:'12 répétitions',desc:'Mains sur le bord de la chaise, fléchis les coudes à 90°',muscles:'Triceps, épaules',svg:'dips'},
+    {id:'curl',name:'Curl biceps (bouteilles)',reps:'15 répétitions',desc:"Bouteilles d'eau comme haltères, fléchis les avant-bras",muscles:'Biceps',svg:'curl'},
+    {id:'shoulder',name:'Élévations latérales',reps:'15 répétitions',desc:"Bras le long du corps, monte les bras à l'horizontale",muscles:'Épaules, deltoïdes',svg:'shoulder'},
+  ],
+  zen: [
+    {id:'respiration',name:'Cohérence cardiaque',reps:'5 minutes',desc:'Inspire 5 secondes, expire 5 secondes. Réduit le cortisol immédiatement.',muscles:'Anti-stress, GLP-1 ↑',svg:'breath'},
+    {id:'chat_vache',name:'Chat / Vache',reps:'10 cycles lents',desc:'À 4 pattes : expire en arrondissant le dos (chat), inspire en le creusant (vache)',muscles:'Colonne vertébrale, dos',svg:'catvow'},
+    {id:'etirement_hip',name:'Étirement des hanches',reps:'30 sec chaque côté',desc:"Un genou au sol, l'autre pied devant, penche le bassin en avant",muscles:'Hanches, psoas (anti-stress)',svg:'hip'},
+    {id:'torsion',name:'Torsion assis',reps:'30 sec chaque côté',desc:"Assis, pose un pied de l'autre côté du genou, tords le buste",muscles:'Dos, digestion',svg:'twist'},
+  ]
+};
+
+const SVG_EXERCISES = {
+  squat: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--purple)"/>
+    <line x1="40" y1="20" x2="40" y2="50" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="35" x2="22" y2="45" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="35" x2="58" y2="45" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="25" y2="75" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="55" y2="75" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="25" y1="75" x2="20" y2="92" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="55" y1="75" x2="60" y2="92" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="18" y1="92" x2="28" y2="92" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"/>
+    <line x1="58" y1="92" x2="68" y2="92" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Squat</text>
+  </svg>`,
+  lunge: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="38" cy="10" r="8" fill="var(--pink)"/>
+    <line x1="38" y1="18" x2="38" y2="45" stroke="var(--pink)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="38" y1="30" x2="20" y2="40" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="38" y1="30" x2="56" y2="40" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="38" y1="45" x2="20" y2="70" stroke="var(--pink)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="38" y1="45" x2="58" y2="65" stroke="var(--pink)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="70" x2="15" y2="90" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="58" y1="65" x2="62" y2="90" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="12" y1="90" x2="22" y2="90" stroke="var(--pink)" stroke-width="2"/>
+    <line x1="58" y1="90" x2="68" y2="90" stroke="var(--pink)" stroke-width="2"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Fente</text>
+  </svg>`,
+  plank: `<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="85" cy="18" r="8" fill="var(--green)"/>
+    <line x1="77" y1="22" x2="20" y2="45" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="20" y1="45" x2="15" y2="65" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="42" y1="38" x2="38" y2="65" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="85" y1="26" x2="80" y2="45" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="80" y1="45" x2="90" y2="60" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="13" y1="65" x2="22" y2="65" stroke="var(--green)" stroke-width="2"/>
+    <line x1="36" y1="65" x2="45" y2="65" stroke="var(--green)" stroke-width="2"/>
+    <text x="50" y="80" text-anchor="middle" font-size="9" fill="var(--text3)">Planche</text>
+  </svg>`,
+  pushup_desk: `<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="55" width="90" height="6" rx="2" fill="var(--amber)" opacity="0.5"/>
+    <circle cx="75" cy="18" r="8" fill="var(--amber)"/>
+    <line x1="67" y1="22" x2="20" y2="50" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="50" x2="12" y2="72" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="40" x2="35" y2="72" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="75" y1="26" x2="72" y2="55" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="50" y="82" text-anchor="middle" font-size="9" fill="var(--text3)">Pompes bureau</text>
+  </svg>`,
+  breath: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="40" r="28" stroke="var(--teal)" stroke-width="2" fill="none" opacity="0.3"/>
+    <circle cx="40" cy="40" r="18" stroke="var(--teal)" stroke-width="2.5" fill="none" opacity="0.6"/>
+    <circle cx="40" cy="40" r="8" fill="var(--teal)" opacity="0.8"/>
+    <text x="40" y="82" text-anchor="middle" font-size="9" fill="var(--text3)">Cohérence</text>
+    <text x="40" y="93" text-anchor="middle" font-size="8" fill="var(--text3)">5s inspire / 5s expire</text>
+  </svg>`,
+  calf: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--blue)"/>
+    <line x1="40" y1="20" x2="40" y2="52" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="22" y2="42" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="58" y2="42" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="52" x2="30" y2="75" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="52" x2="50" y2="75" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="30" y1="75" x2="28" y2="88" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="50" y1="75" x2="52" y2="88" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="24" y1="84" x2="34" y2="84" stroke="var(--blue)" stroke-width="2"/>
+    <line x1="48" y1="84" x2="58" y2="84" stroke="var(--blue)" stroke-width="2"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Mollets</text>
+  </svg>`,
+  superman: `<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="35" r="8" fill="var(--green)"/>
+    <line x1="42" y1="35" x2="15" y2="28" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="58" y1="35" x2="85" y2="45" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+    <line x1="50" y1="43" x2="30" y2="55" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="50" y1="43" x2="75" y2="30" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+    <text x="50" y="75" text-anchor="middle" font-size="9" fill="var(--text3)">Superman</text>
+  </svg>`,
+  jumping: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--coral)"/>
+    <line x1="40" y1="20" x2="40" y2="50" stroke="var(--coral)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="30" x2="12" y2="20" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="30" x2="68" y2="20" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="18" y2="75" stroke="var(--coral)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="62" y2="75" stroke="var(--coral)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="18" y1="75" x2="13" y2="92" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="62" y1="75" x2="67" y2="92" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Jumping jacks</text>
+  </svg>`,
+  march: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--amber)"/>
+    <line x1="40" y1="20" x2="40" y2="50" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="55" y2="42" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="25" y2="48" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="28" y2="72" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="55" y2="62" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="55" y1="62" x2="58" y2="50" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="28" y1="72" x2="23" y2="90" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Marche genoux hauts</text>
+  </svg>`,
+  boxing: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--coral)"/>
+    <line x1="40" y1="20" x2="40" y2="50" stroke="var(--coral)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="30" x2="65" y2="22" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="68" cy="21" r="4" fill="var(--coral)" opacity="0.6"/>
+    <line x1="40" y1="34" x2="18" y2="40" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="28" y2="72" stroke="var(--coral)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="52" y2="72" stroke="var(--coral)" stroke-width="3" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Shadow boxing</text>
+  </svg>`,
+  dips: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="65" width="70" height="6" rx="2" fill="var(--purple)" opacity="0.4"/>
+    <circle cx="40" cy="18" r="8" fill="var(--purple)"/>
+    <line x1="40" y1="26" x2="40" y2="52" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="36" x2="18" y2="52" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="36" x2="62" y2="52" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="18" y1="52" x2="14" y2="65" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="62" y1="52" x2="66" y2="65" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="52" x2="30" y2="72" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="52" x2="50" y2="72" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Dips chaise</text>
+  </svg>`,
+  curl: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--blue)"/>
+    <line x1="40" y1="20" x2="40" y2="50" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="58" y2="32" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="58" y1="32" x2="62" y2="48" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="63" cy="51" r="4" fill="var(--blue)" opacity="0.6"/>
+    <line x1="40" y1="32" x2="22" y2="50" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="20" cy="53" r="4" fill="var(--blue)" opacity="0.6"/>
+    <line x1="40" y1="50" x2="28" y2="75" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="52" y2="75" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Curl biceps</text>
+  </svg>`,
+  shoulder: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--amber)"/>
+    <line x1="40" y1="20" x2="40" y2="50" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="12" y2="32" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="32" x2="68" y2="32" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="10" cy="32" r="4" fill="var(--amber)" opacity="0.6"/>
+    <circle cx="70" cy="32" r="4" fill="var(--amber)" opacity="0.6"/>
+    <line x1="40" y1="50" x2="28" y2="75" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="50" x2="52" y2="75" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Élévations</text>
+  </svg>`,
+  hip: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="15" r="8" fill="var(--teal)"/>
+    <line x1="50" y1="23" x2="45" y2="48" stroke="var(--teal)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="47" y1="35" x2="30" y2="42" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="45" y1="48" x2="60" y2="68" stroke="var(--teal)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="45" y1="48" x2="22" y2="72" stroke="var(--teal)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="22" y1="72" x2="18" y2="90" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="60" y1="68" x2="62" y2="90" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Hanche</text>
+  </svg>`,
+  catvow: `<svg viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="80" cy="25" r="8" fill="var(--pink)"/>
+    <path d="M72 30 Q50 20 28 32" stroke="var(--pink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <line x1="28" y1="32" x2="20" y2="55" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="50" y1="26" x2="48" y2="55" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="72" y1="30" x2="75" y2="55" stroke="var(--pink)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="80" y1="33" x2="85" y2="55" stroke="var(--pink)" stroke-width="2" stroke-linecap="round"/>
+    <text x="50" y="74" text-anchor="middle" font-size="9" fill="var(--text3)">Chat / Vache</text>
+  </svg>`,
+  twist: `<svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="12" r="8" fill="var(--purple)"/>
+    <line x1="40" y1="20" x2="40" y2="48" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="30" x2="62" y2="26" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="40" y1="34" x2="18" y2="42" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M40 48 Q28 58 25 75" stroke="var(--purple)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M40 48 Q52 55 55 75" stroke="var(--purple)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <text x="40" y="108" text-anchor="middle" font-size="9" fill="var(--text3)">Torsion</text>
+  </svg>`,
+};
+
+let pauseCat = 'bureau';
+let pauseTimerInterval = null;
+let pauseSeconds = 0;
+let sleepProfileView = 'f';
+
+const GLP1_CHECKLIST = [
+  {id:'breakfast_protein', label:'Petit-déj protéiné (œufs, yaourt grec)', pts:2, cat:'🍳 Alimentation'},
+  {id:'fiber_meal', label:'Fibres solubles au repas (avoine, lentilles, pomme)', pts:2, cat:'🥦 Alimentation'},
+  {id:'good_fats', label:"Bons gras aujourd'hui (avocat, huile olive, noix)", pts:1, cat:'🥑 Alimentation'},
+  {id:'no_refined', label:'Peu de sucres raffinés & graisses saturées', pts:1, cat:'🚫 Alimentation'},
+  {id:'slow_eating', label:'Mangé lentement, petites bouchées', pts:1, cat:'🐢 Comportement'},
+  {id:'sport_done', label:'Au moins une pause active ou sport', pts:2, cat:'🏃 Mouvement'},
+  {id:'sleep_ok', label:'Bien dormi cette nuit (≥7h)', pts:1, cat:'🌙 Sommeil'},
+  {id:'curcuma', label:'Curcuma dans un repas (+ poivre noir)', pts:0.5, cat:'🌿 Épices'},
+  {id:'no_stress_eating', label:'Pas mangé sous stress / automatiquement', pts:1, cat:'🧘 Comportement'},
+  {id:'chocolate_ok', label:'Chocolat ≤2 carrés ou >85% (si envie)', pts:0.5, cat:'🍫 Chocolat'},
+];
+
+const GLP1_FOODS = [
+  {emoji:'🥚', name:'Œufs', detail:'Protéines complètes — stimulent fortement le GLP-1'},
+  {emoji:'🐟', name:'Saumon / poisson gras', detail:'Oméga-3 + protéines — double effet GLP-1'},
+  {emoji:'🫘', name:'Lentilles / légumineuses', detail:'Fibres solubles — fermentation intestinale → GLP-1'},
+  {emoji:'🥣', name:"Flocons d'avoine", detail:'Bêta-glucane — fibre soluble la plus étudiée'},
+  {emoji:'🥑', name:'Avocat', detail:'Graisses monoinsaturées — libération prolongée de GLP-1'},
+  {emoji:'🫐', name:'Fruits rouges', detail:'Polyphénols — améliorent la réponse du microbiote'},
+  {emoji:'🥦', name:'Brocolis / légumes verts', detail:'Fibres + indole-3-carbinol — bon pour les 40+'},
+  {emoji:'🧆', name:'Yaourt grec / kéfir', detail:'Probiotiques + protéines — microbiote → GLP-1'},
+  {emoji:'🌰', name:'Noix / amandes', detail:'Fibres + graisses saines + protéines végétales'},
+  {emoji:'☕', name:'Café (≤3 tasses)', detail:'Polyphénols — effet modéré mais documenté'},
+];
+
+const GLP1_SUPPS = [
+  {name:'Berbérine', detail:'Le plus documenté. Stimule les souches bactériennes GLP-1. 500mg x2/jour. À discuter avec ton médecin.', level:'⭐⭐⭐'},
+  {name:'Magnésium glycinate', detail:'Réduit le cortisol, améliore le sommeil → meilleure sécrétion GLP-1 indirecte.', level:'⭐⭐⭐'},
+  {name:'Probiotiques L. acidophilus', detail:'Optimisent le microbiote intestinal qui produit le GLP-1.', level:'⭐⭐'},
+  {name:'Curcumine + pipérine', detail:'Anti-inflammatoire intestinal. Inhibe la dégradation du GLP-1 actif.', level:'⭐⭐'},
+  {name:'Oméga-3 (huile de poisson)', detail:"Stimule la libération de GLP-1 dans l'intestin.", level:'⭐⭐'},
+  {name:'Psyllium (fibre soluble)', detail:'Augmente la fermentation intestinale → production GLP-1.', level:'⭐⭐'},
+];
+
+function setPauseCat(cat) {
+  pauseCat = cat;
+  document.querySelectorAll('#pause-cat-btns .mbtn').forEach(b => 
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'"+cat+"'")));
+  renderPauseExercises();
+}
+
+function renderPauseExercises() {
+  const exs = EXERCISES[pauseCat] || [];
+  const el = document.getElementById('pause-exercises');
+  if (!el) return;
+  el.innerHTML = `<div class="g2">${exs.map(e => `
+    <div style="background:var(--bg2);border-radius:var(--r);padding:1rem;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:70px;min-width:70px;height:70px;display:flex;align-items:center;justify-content:center">
+        ${SVG_EXERCISES[e.svg] || `<div style="font-size:32px;text-align:center">💪</div>`}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px">${e.name}</div>
+        <div style="font-size:12px;color:var(--purple);font-weight:500;margin-bottom:4px">${e.reps}</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:3px">${e.desc}</div>
+        <div style="font-size:10px;color:var(--text3)">💪 ${e.muscles}</div>
+      </div>
+    </div>`).join('')}</div>`;
+
+  const lib = document.getElementById('exercise-library');
+  if (lib) lib.innerHTML = Object.values(EXERCISES).flat().map(e => `
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.75rem;text-align:center">
+      <div style="width:60px;height:60px;margin:0 auto 6px">${SVG_EXERCISES[e.svg]||'💪'}</div>
+      <div style="font-size:12px;font-weight:600">${e.name}</div>
+      <div style="font-size:11px;color:var(--purple)">${e.reps}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${e.muscles}</div>
+    </div>`).join('');
+}
+
+function startPause() {
+  pauseSeconds = 0;
+  document.getElementById('pause-timer').style.display = 'inline-block';
+  document.getElementById('pause-stop-btn').style.display = 'inline-block';
+  document.getElementById('pause-start-btn').textContent = '⏸ En cours...';
+  if (pauseTimerInterval) clearInterval(pauseTimerInterval);
+  pauseTimerInterval = setInterval(() => {
+    pauseSeconds++;
+    const m = Math.floor(pauseSeconds/60).toString().padStart(2,'0');
+    const s = (pauseSeconds%60).toString().padStart(2,'0');
+    const el = document.getElementById('pause-timer');
+    if (el) el.textContent = m+':'+s;
+  }, 1000);
+}
+
+function stopPause() {
+  if (pauseTimerInterval) clearInterval(pauseTimerInterval);
+  document.getElementById('pause-start-btn').textContent = '▶ Démarrer la pause';
+  document.getElementById('pause-stop-btn').style.display = 'none';
+}
+
+function logPause() {
+  const t = today();
+  const arr = gD('pauses');
+  arr.push({date:t, cat:pauseCat, duree:pauseSeconds});
+  sD('pauses', arr);
+  if (pauseTimerInterval) clearInterval(pauseTimerInterval);
+  document.getElementById('pause-timer').style.display = 'none';
+  document.getElementById('pause-stop-btn').style.display = 'none';
+  document.getElementById('pause-start-btn').textContent = '▶ Démarrer la pause';
+  pauseSeconds = 0;
+  renderPauseToday();
+  refreshAll();
+}
+
+function renderPauseToday() {
+  const t = today();
+  const arr = gD('pauses').filter(x => x.date === t);
+  const count = arr.length;
+  const el = document.getElementById('pause-today-count');
+  if (el) el.textContent = count;
+  const prog = document.getElementById('pause-prog');
+  if (prog) prog.style.width = Math.min(100, (count/3)*100)+'%';
+}
+
+// ── GLP-1 ──
+function renderGlp1Page() {
+  const t = today();
+  const saved = gO('glp1_'+t, {});
+  const el = document.getElementById('glp1-checklist');
+  if (!el) return;
+  const cats = [...new Set(GLP1_CHECKLIST.map(x=>x.cat))];
+  el.innerHTML = cats.map(cat => `
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">${cat}</div>
+      ${GLP1_CHECKLIST.filter(x=>x.cat===cat).map(item=>`
+        <label style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg2);border-radius:var(--r);margin-bottom:4px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="glp_${item.id}" ${saved[item.id]?'checked':''} onchange="updateGlp1Score()" style="width:16px;height:16px;accent-color:var(--green)">
+          <span style="flex:1">${item.label}</span>
+          <span style="font-size:11px;color:var(--green);font-weight:600">+${item.pts}pt</span>
+        </label>`).join('')}
+    </div>`).join('');
+
+  const foodsEl = document.getElementById('glp1-foods');
+  if (foodsEl) foodsEl.innerHTML = GLP1_FOODS.map(f=>`
+    <div class="le"><span style="font-size:18px">${f.emoji}</span>
+      <span class="lm">${f.name}</span>
+      <span class="lme">${f.detail}</span>
+    </div>`).join('');
+
+  const suppsEl = document.getElementById('glp1-supps');
+  if (suppsEl) suppsEl.innerHTML = GLP1_SUPPS.map(s=>`
+    <div class="le" style="flex-direction:column;align-items:flex-start;gap:3px">
+      <div style="display:flex;width:100%;justify-content:space-between">
+        <span class="lm">${s.name}</span><span>${s.level}</span>
+      </div>
+      <span style="font-size:11px;color:var(--text2)">${s.detail}</span>
+    </div>`).join('');
+
+  updateGlp1Score();
+}
+
+function updateGlp1Score() {
+  let score = 0;
+  const max = GLP1_CHECKLIST.reduce((a,b)=>a+b.pts,0);
+  GLP1_CHECKLIST.forEach(item => {
+    const el = document.getElementById('glp_'+item.id);
+    if (el && el.checked) score += item.pts;
+  });
+  const pct = Math.min(100,(score/max)*100);
+  const scoreEl = document.getElementById('glp1-score');
+  if (scoreEl) scoreEl.textContent = score.toFixed(1)+'/'+max;
+  const prog = document.getElementById('glp1-prog');
+  if (prog) { prog.style.width=pct.toFixed(0)+'%'; prog.style.background=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--coral)'; }
+}
+
+function saveGlp1() {
+  const t = today();
+  const saved = {};
+  let score = 0;
+  GLP1_CHECKLIST.forEach(item => {
+    const el = document.getElementById('glp_'+item.id);
+    saved[item.id] = el ? el.checked : false;
+    if (saved[item.id]) score += item.pts;
+  });
+  sO('glp1_'+t, saved);
+  const arr = gD('glp1_scores');
+  const idx = arr.findIndex(x=>x.date===t);
+  if (idx>=0) arr[idx].score=score; else arr.push({date:t,score});
+  sD('glp1_scores', arr);
+  alert('Checklist GLP-1 sauvegardée ! Score : '+score.toFixed(1));
+  refreshCharts();
+}
+
+// ── SLEEP OPTIMIZE ──
+const SLEEP_TOI = [
+  {icon:'💊', title:'Magnésium glycinate', detail:'200–400mg, 30 min avant le coucher. Réduit le cortisol, soutient la mélatonine. Le stress chronique épuise le magnésium.'},
+  {icon:'🌿', title:'Ashwagandha', detail:"300–600mg/jour. Adaptogène qui réduit le cortisol du soir — excellent pour l'insomnie liée au stress."},
+  {icon:'🫐', title:'L-Théanine', detail:'100–200mg le soir. Favorise la relaxation sans somnolence. Synergie avec le magnésium.'},
+  {icon:'📵', title:'Écran coupé 45 min avant', detail:"La lumière bleue supprime la mélatonine jusqu'à 50%. Mode nuit ne suffit pas — coupe l'écran."},
+  {icon:'🕯️', title:'Lumière tamisée dès 21h', detail:'Signal fort pour le cerveau : "la nuit approche". Évite les LED blanches froides le soir.'},
+  {icon:'🧘', title:'5 min de respiration 4-7-8', detail:'Inspire 4s, retiens 7s, expire 8s. Active le nerf vague, coupe le cortisol immédiatement.'},
+];
+
+const SLEEP_LUI = [
+  {icon:'🧠', title:'Protocole "worry time"', detail:"15 min dans l'après-midi : écris tout ce qui préoccupe + une action pour chacun. Le cerveau \"lâche\" car c'est noté."},
+  {icon:'📓', title:'Journal des tâches du lendemain', detail:'Avant de dormir, liste les 3 tâches du lendemain. Évite que le cerveau les "stocke" en RAM la nuit.'},
+  {icon:'🥶', title:'Température chambre 17–19°C', detail:'La baisse de température corporelle est le signal principal du sommeil profond. Chambre fraîche = sommeil maintenu.'},
+  {icon:'💊', title:'Glycine 3g', detail:'Acide aminé qui abaisse la température centrale et favorise le sommeil profond. Prouvé en essai clinique.'},
+  {icon:'⏰', title:'Heure de lever FIXE', detail:"Le levier n°1 pour l'insomnie de maintien. Même le week-end. Le cerveau se recale en 2 semaines."},
+  {icon:'🚫', title:"Pas d'alcool le soir", detail:"L'alcool sédatif fragmente le sommeil en 2ème partie de nuit — typiquement entre 2h et 5h."},
+  {icon:'🫁', title:'Vérifier le masque PPC', detail:"S'assurer que la pression est bien ajustée. Un microréveil d'apnée peut déclencher la rumination."},
+];
+
+const ROUTINES = {
+  f: [
+    {time:'21h00', action:'Couper les écrans', detail:'Remplace par la lecture, podcast, musique douce'},
+    {time:'21h15', action:'Lumières tamisées', detail:'Lampe de chevet uniquement, idéalement orange/jaune'},
+    {time:'21h30', action:'Tisane + Magnésium', detail:'Camomille, verveine ou passiflore. Prendre le magnésium.'},
+    {time:'21h45', action:'5 min de respiration 4-7-8', detail:'Allongée, main sur le ventre, 5 cycles complets'},
+    {time:'22h00', action:'Étirements doux 5 min', detail:'Chat/vache, torsions, hanches — décharge le cortisol résiduel'},
+    {time:'22h15', action:'Journal de gratitude', detail:'3 choses positives du jour. Recalibre le cerveau vers le positif avant le sommeil.'},
+    {time:'22h30', action:'Coucher cible', detail:'Chambre fraîche, obscurité totale ou masque'},
+  ],
+  m: [
+    {time:'20h45', action:'"Worry time" — 15 min', detail:'Assis, carnet, liste tout ce qui préoccupe + une micro-action pour chacun. Fermer le carnet = fermer le dossier.'},
+    {time:'21h00', action:'Liste des 3 tâches demain', detail:"Concrètes, réalistes. Le cerveau n'a plus besoin de les garder actives."},
+    {time:'21h15', action:'Couper les écrans', detail:'Surtout pas de news ni de mails professionnels.'},
+    {time:'21h30', action:'Lumières tamisées + chambre fraîche', detail:'Descendre le thermostat ou ouvrir la fenêtre.'},
+    {time:'21h45', action:'Glycine 3g + tisane', detail:"Valériane ou houblon pour renforcer l'effet."},
+    {time:'22h00', action:'Cohérence cardiaque 5 min', detail:'Inspire 5s / expire 5s. Active le nerf vague, freine la rumination.'},
+    {time:'22h30', action:'Coucher à heure FIXE', detail:'Même heure chaque soir — le rythme circadien se cale en 2 semaines.'},
+  ]
+};
+
+const RUMINATION_TECH = [
+  {name:'Protocole "Worry Time"', desc:"15 min en milieu d'après-midi (pas le soir). Écris chaque préoccupation + une petite action possible. Fermer le carnet = signal physique de clôture. Quand le cerveau repart en cogitation la nuit, dis-toi : \"c'est noté, c'est traité.\""},
+  {name:'Technique 5-4-3-2-1 (ancrage sensoriel)', desc:'Au réveil nocturne : nomme mentalement 5 choses que tu vois, 4 que tu entends, 3 que tu peux toucher, 2 odeurs, 1 goût. Ramène le cerveau au présent et hors du mode rumination.'},
+  {name:'Respiration "Box breathing"', desc:"Inspire 4s → retiens 4s → expire 4s → retiens 4s. 4 cycles. Utilisé par les Navy SEALs pour sortir d'un état de stress aigu. Freine le cortisol en moins de 2 minutes."},
+  {name:'Règle des 20 minutes', desc:"Si non rendormi en 20 min : se lever, aller dans une autre pièce avec lumière faible, activité calme (lecture papier), et revenir au lit seulement quand la somnolence revient. Casse l'association \"lit = lieu d'anxiété\"."},
+  {name:'Audio "cognitive shuffle"', desc:"Imaginer une séquence d'images aléatoires et déconnectées (un chapeau, une plage, un cheval violet...). Perturbe intentionnellement la pensée linéaire et la rumination narrative. L'app Moshi ou des podcasts dédiés peuvent aider."},
+];
+
+const SLEEP_SUPPS = [
+  {who:'♀ Toi', name:'Magnésium glycinate', dose:'200–400mg', timing:'30 min avant le coucher', evidence:"⭐⭐⭐ Essais cliniques — réduit le cortisol et le temps d'endormissement", safe:true},
+  {who:'♀ Toi', name:'Ashwagandha (KSM-66)', dose:'300–600mg', timing:'Le matin ou le soir', evidence:'⭐⭐⭐ Réduit le cortisol chronique', safe:true},
+  {who:'♂ Lui', name:'Glycine', dose:'3g', timing:'30 min avant le coucher', evidence:'⭐⭐⭐ Améliore le sommeil profond, réduit la fatigue matinale', safe:true},
+  {who:'♀♂ Tous deux', name:'L-Théanine', dose:'100–200mg', timing:'Le soir', evidence:'⭐⭐ Favorise relaxation sans somnolence', safe:true},
+  {who:'♀♂ Tous deux', name:'Mélatonine (faible dose)', dose:'0,5mg (pas 3–5mg)', timing:'1h avant le coucher', evidence:'⭐⭐ Efficace sur le rythme circadien à faible dose', safe:true},
+  {who:'♂ Lui', name:'Valériane + Houblon', dose:'Selon produit', timing:'30 min avant le coucher', evidence:'⭐⭐ Améliore le maintien du sommeil', safe:true},
+];
+
+function setSleepProfile(p) {
+  sleepProfileView = p;
+  document.querySelectorAll('#s-sleep-opt .mbtn').forEach(b => 
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'"+p+"'")));
+  renderSleepRoutine();
+}
+
+function renderSleepOptPage() {
+  // Cards toi / lui
+  const toiEl = document.getElementById('sleep-toi');
+  if (toiEl) toiEl.innerHTML = SLEEP_TOI.map(s=>`
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px;min-width:24px">${s.icon}</span>
+      <div><div style="font-size:13px;font-weight:600">${s.title}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:1px">${s.detail}</div></div>
+    </div>`).join('');
+
+  const luiEl = document.getElementById('sleep-lui');
+  if (luiEl) luiEl.innerHTML = SLEEP_LUI.map(s=>`
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px;min-width:24px">${s.icon}</span>
+      <div><div style="font-size:13px;font-weight:600">${s.title}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:1px">${s.detail}</div></div>
+    </div>`).join('');
+
+  renderSleepRoutine();
+
+  // Rumination
+  const rumEl = document.getElementById('rumination-techniques');
+  if (rumEl) rumEl.innerHTML = RUMINATION_TECH.map((t,i)=>`
+    <div style="padding:10px 12px;background:var(--bg2);border-radius:var(--r);margin-bottom:6px;border-left:3px solid var(--blue)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">${i+1}. ${t.name}</div>
+      <div style="font-size:12px;color:var(--text2)">${t.desc}</div>
+    </div>`).join('');
+
+  // Suppléments
+  const suppsEl = document.getElementById('sleep-supps');
+  if (suppsEl) suppsEl.innerHTML = SLEEP_SUPPS.map(s=>`
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:600">${s.name}</span>
+        <span style="font-size:11px;padding:2px 7px;border-radius:20px;background:${s.who.includes('♀')&&s.who.includes('♂')?'var(--purple-l)':s.who.includes('♀')?'var(--pink-l)':'var(--blue-l)'};color:${s.who.includes('♀')&&s.who.includes('♂')?'var(--purple-d)':s.who.includes('♀')?'var(--pink-d)':'var(--blue-d)'}">${s.who}</span>
+      </div>
+      <div style="font-size:12px;color:var(--purple);margin-bottom:3px">💊 ${s.dose} — ${s.timing}</div>
+      <div style="font-size:11px;color:var(--text3)">${s.evidence}</div>
+    </div>`).join('');
+
+  // Checklists
+  const checkF = ['Écran coupé 45 min avant','Magnésium pris','Lumière tamisée','Respiration 4-7-8 faite','Chambre fraîche','Pas de café après 14h','Tisane du soir'];
+  const checkM = ['Worry time fait (après-midi)','Liste tâches lendemain écrite','Masque PPC en place','Glycine prise','Heure de coucher respectée',"Pas d'alcool ce soir",'Chambre fraîche 17–19°C'];
+  const chkF = document.getElementById('sleep-check-f');
+  const chkM = document.getElementById('sleep-check-m');
+  if (chkF) chkF.innerHTML = checkF.map((c,i)=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg2);border-radius:var(--r);margin-bottom:4px;cursor:pointer;font-size:12px">
+      <input type="checkbox" id="schkf_${i}" style="accent-color:var(--pink);width:15px;height:15px"> ${c}
+    </label>`).join('');
+  if (chkM) chkM.innerHTML = checkM.map((c,i)=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg2);border-radius:var(--r);margin-bottom:4px;cursor:pointer;font-size:12px">
+      <input type="checkbox" id="schkm_${i}" style="accent-color:var(--blue);width:15px;height:15px"> ${c}
+    </label>`).join('');
+}
+
+function renderSleepRoutine() {
+  const el = document.getElementById('sleep-routine');
+  if (!el) return;
+  const routine = ROUTINES[sleepProfileView];
+  el.innerHTML = `<div class="ll">${routine.map(r=>`
+    <div class="le">
+      <span style="font-size:12px;font-weight:700;color:var(--purple);min-width:48px">${r.time}</span>
+      <span class="lm">${r.action}</span>
+      <span class="lme">${r.detail}</span>
+    </div>`).join('')}</div>`;
+}
+
+function saveSleepCheck() {
+  alert('Checklist du soir enregistrée — bonne nuit ! 🌙');
+}
+
+// ── CHART GLP1 ──
+function renderGlp1Chart() {
+  const arr = gD('glp1_scores');
+  if (!arr.length) return;
+  const max = GLP1_CHECKLIST.reduce((a,b)=>a+b.pts,0);
+  const l14 = arr.slice(-14);
+  mk('c-glp1', {type:'bar', data:{labels:l14.map(x=>fd(x.date)), datasets:[{
+    label:'Score GLP-1', data:l14.map(x=>x.score),
+    backgroundColor:l14.map(x=>(x.score/max)>=0.7?'#1D9E75':(x.score/max)>=0.4?'#BA7517':'#D85A30'),
+    borderRadius:4
+  }]}, options:{...baseOpts({max, ticks:{font:{size:10}}})}});
+}
+
+// ════════════════ MASTER REFRESH ════════════════
+function refreshAll(){
+  renderIMC();
+  renderLogs();
+  renderBilan();
+  renderPauseToday();
+  renderGlp1Page();
+  renderSleepOptPage();
+  refreshCharts();
+}
+
+refreshAll();
+</script>
+</body>
+</html>
